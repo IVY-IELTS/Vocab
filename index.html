@@ -1211,6 +1211,47 @@ nav.sections .sec-pct.full{background:var(--ar-leaf);color:#fff;}
 .sx-stat{font-size:13px;color:#4a5563;margin:6px 0;}
 .sx-stat b{color:#1F3A5F;}
 
+/* Trang chủ + chế độ khách */
+.home-hero{margin:8px 0 34px;display:grid;grid-template-columns:1.25fr 1fr;gap:28px;align-items:start;}
+.home-hero .hh-main{background:linear-gradient(140deg,#1F2B3A,#22344A 60%,#2E4763);color:#F6F1E6;border-radius:22px;padding:34px 34px 28px;position:relative;overflow:hidden;}
+.home-hero .hh-main::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#C0562C55,transparent 70%);}
+.hh-kicker{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#E8C9B4;margin-bottom:10px;}
+.home-hero h1{font-family:Georgia,'Times New Roman',serif;font-size:36px;line-height:1.15;margin:0 0 14px;font-weight:700;}
+.home-hero h1 em{color:#F2A97E;font-style:italic;}
+.home-hero .hh-main p{font-size:15.5px;line-height:1.6;color:#D9DEE6;margin:0 0 20px;max-width:560px;}
+.hh-cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.hh-btn{font:inherit;font-size:15px;font-weight:700;border-radius:999px;padding:11px 20px;cursor:pointer;border:2px solid #E8C9B4;background:transparent;color:inherit;}
+.hh-btn.primary{background:#C0562C;border-color:#C0562C;color:#fff;}
+.hh-btn:hover{transform:translateY(-1px);}
+.hh-stats{display:flex;gap:28px;margin-top:24px;padding-top:18px;border-top:1px solid #ffffff22;}
+.hh-stats b,.hh-mini b{display:block;font-family:Georgia,serif;font-size:26px;}
+.hh-stats span,.hh-mini span{font-size:12.5px;color:#B9C3D0;}
+.hh-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.hh-features div{background:#FBF8F0;border:1px solid #E5DDCB;border-radius:16px;padding:16px;}
+.hh-features i{font-style:normal;font-size:26px;display:block;margin-bottom:6px;}
+.hh-features b{display:block;font-size:15px;color:#1F2B3A;margin-bottom:4px;}
+.hh-features span{font-size:13px;line-height:1.45;color:#54627A;}
+.hh-steps{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.hh-steps li{background:#fff;border:1px dashed #D8CDB6;border-radius:14px;padding:10px 12px;font-size:13.5px;color:#1F2B3A;display:flex;gap:10px;align-items:center;}
+.hh-steps li b{background:#1F2B3A;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none;}
+.home-hero.compact{display:block;}
+.hh-welcome{display:flex;flex-wrap:wrap;gap:18px 30px;align-items:center;justify-content:space-between;background:linear-gradient(140deg,#1F2B3A,#2E4763);color:#F6F1E6;border-radius:20px;padding:20px 26px;}
+.hh-welcome h2{font-family:Georgia,serif;margin:0;font-size:26px;}
+.hh-welcome h2 small{font-family:inherit;font-size:15px;color:#B9C3D0;font-weight:400;}
+.hh-mini{display:flex;gap:26px;}
+.hh-ok{font-size:14px;color:#CFE3D0;}
+.guest-lock{text-align:center;background:#fff;border:2px dashed #E5DDCB;border-radius:20px;padding:30px 20px;max-width:560px;margin:10px auto;}
+.guest-lock .gl-ic{font-size:44px;}
+.guest-lock h3{font-family:Georgia,serif;font-size:24px;margin:6px 0;}
+.guest-lock .gl-note{font-size:14px;color:#7A6553;}
+@media (max-width:860px){
+  .home-hero{grid-template-columns:1fr;}
+  .home-hero h1{font-size:28px;}
+  .home-hero .hh-main{padding:26px 22px;}
+  .hh-steps{grid-template-columns:1fr 1fr;}
+  .hh-stats{gap:18px;}
+}
+
 </style>
 </head>
 <body>
@@ -6408,7 +6449,7 @@ renderBadgeShelf();
   const lastId = storage.get('last');
   const list = storage.get('students') || [];
   const s = list.find(x=>x.id===lastId);
-  if(s) loginAs({id:s.id, name:s.name, cls:s.cls}); else showLogin();
+  if(s) loginAs({id:s.id, name:s.name, cls:s.cls}); /* khách: guest.js lo phần còn lại */
 })();
 </script>
 <script>
@@ -6836,6 +6877,192 @@ function sxMatch(){
     });
   }
 }
+
+</script>
+<script>
+/* ===================================================================
+   CHẾ ĐỘ KHÁCH + TRANG CHỦ
+   - Vào web là xem được ngay: trang chủ, unit, danh sách từ, thẻ lật.
+   - Chỉ hỏi tên/lớp khi bắt đầu làm bài, chơi game, ôn tập hay nộp kết quả.
+   - Sau khi đăng nhập, quay lại đúng chỗ đang định làm.
+   =================================================================== */
+let PENDING_AFTER_LOGIN = null;
+const GUEST_FREE_MODES = ['flash', 'journey'];   // xem thẻ lật + bản đồ hành trình không cần đăng nhập
+
+function isGuest(){ return !currentStudent; }
+function activePanel(){
+  const b = document.querySelector('nav.sections button.active, nav.sections button.on, nav.sections button[aria-selected="true"]');
+  return b ? b.dataset.panel : null;
+}
+function requireLogin(action, why){
+  if(currentStudent) return action();
+  const tid = state.currentTopic, panel = activePanel();
+  PENDING_AFTER_LOGIN = ()=>{
+    if(tid){ openTopic(tid); if(panel){ const tab = document.querySelector(`nav.sections button[data-panel="${panel}"]`); if(tab) tab.click(); } }
+    action();
+  };
+  showLogin(why);
+}
+
+/* ----- đăng nhập: cho phép "Để sau" khi đang là khách ----- */
+(function(){
+  const _show = showLogin;
+  showLogin = function(why){
+    _show();
+    if(currentStudent) return;
+    const card = document.getElementById('loginCard');
+    const h = card.querySelector('h2'), lead = card.querySelector('.rv-lead');
+    if(h) h.textContent = why ? 'Đăng nhập để tiếp tục 👋' : 'Chào em! 👋';
+    if(lead) lead.innerHTML = (why ? `<b>${escHtml(why)}</b><br>` : '') +
+      'Chỉ cần nhập họ tên và lớp, không cần mật khẩu. Kết quả học được lưu trên máy này để lần sau học tiếp và gửi cô.';
+    if(!card.querySelector('#loginLater')){
+      const acts = card.querySelector('.pg-actions');
+      const later = document.createElement('button');
+      later.className = 'pg-btn alt'; later.id = 'loginLater'; later.textContent = 'Để sau, xem tiếp';
+      later.style.cssText = 'font-size:14px;padding:11px 20px;';
+      later.onclick = ()=>{ PENDING_AFTER_LOGIN = null; document.getElementById('loginOverlay').classList.remove('show'); };
+      if(acts) acts.appendChild(later);
+      const x = document.createElement('button');
+      x.className = 'rv-close'; x.title = 'Đóng'; x.textContent = '✕'; x.onclick = later.onclick;
+      card.prepend(x);
+    }
+  };
+  const _login = loginAs;
+  loginAs = function(student){
+    const pend = PENDING_AFTER_LOGIN; PENDING_AFTER_LOGIN = null;
+    _login(student);
+    renderHomeHero();
+    if(pend) setTimeout(pend, 30);
+  };
+})();
+
+/* ----- chặn các hoạt động cần lưu kết quả ----- */
+(function(){
+  const _launch = launchActivity;
+  launchActivity = function(id){
+    if(isGuest()) return requireLogin(()=> launchActivity(id), 'Đăng nhập để làm bài luyện tập và lưu điểm.');
+    return _launch(id);
+  };
+  const _review = openReviewSession;
+  openReviewSession = function(){
+    const args = arguments;
+    if(isGuest()) return requireLogin(()=> openReviewSession.apply(null, args), 'Đăng nhập để ôn tập theo lịch và lưu tiến độ.');
+    return _review.apply(null, args);
+  };
+  const _word = startWordStation;
+  startWordStation = function(i){
+    if(isGuest()) return requireLogin(()=> startWordStation(i), 'Đăng nhập để học kỹ từng từ và được tính sao.');
+    return _word(i);
+  };
+  const _ar = startArMode;
+  startArMode = function(mode){
+    if(!isGuest() || GUEST_FREE_MODES.includes(mode)) return _ar(mode);
+    // khách: hiện thẻ giới thiệu game + nút đăng nhập thay vì vào chơi ngay
+    const mg = (AR_MODES.find(m=>m.id===mode)||{}).group;
+    if(mg && mg!==AR.group){ const tab = document.querySelector(`nav.sections button[data-panel="${mg}"]`); if(tab){ tab.click(); return startArMode(mode); } }
+    arStop();
+    AR.mode = mode;
+    arRenderModes();
+    const panel = document.getElementById('arPanel'), journey = document.getElementById('journeyArea');
+    if(panel) panel.style.display = ''; if(journey) journey.style.display = 'none';
+    const m = AR_MODES.find(x=>x.id===mode) || {};
+    const st = arStage(); if(!st) return;
+    st.innerHTML = `<div class="guest-lock">
+      <div class="gl-ic">${m.icon || '🎮'}</div>
+      <h3>${escHtml(m.title || 'Trò chơi')}</h3>
+      <p>${escHtml(m.sub || 'Trò chơi luyện từ vựng của unit này.')}</p>
+      <p class="gl-note">Em đang xem thử. Đăng nhập (chỉ cần họ tên và lớp) để chơi, tính điểm và lưu kết quả cho cô.</p>
+      <div class="ar-row"><button class="ar-btn big" id="glGo">🔑 Đăng nhập để chơi</button>
+      <button class="ar-btn ghost" id="glFlash">🃏 Xem thẻ từ trước</button></div></div>`;
+    document.getElementById('glGo').onclick = ()=> requireLogin(()=> startArMode(mode), 'Đăng nhập để chơi game và lưu điểm.');
+    document.getElementById('glFlash').onclick = ()=> startArMode('flash');
+  };
+  const _report = showReport;
+  showReport = function(){ if(isGuest()) return requireLogin(()=> showReport(), 'Đăng nhập để nộp kết quả cho cô.'); return _report(); };
+  document.getElementById('btnReport').onclick = ()=> showReport();
+  document.getElementById('btnReviewToday').onclick = ()=> currentStudent ? openReviewSession(null) : requireLogin(()=> openReviewSession(null), 'Đăng nhập để ôn tập theo lịch và lưu tiến độ.');
+  document.getElementById('studentChip').onclick = ()=>{ saveProgress(); showLogin(); };
+})();
+
+/* ----- trang chủ: hero + lối tắt ----- */
+function homeStats(){
+  const units = TOPICS.length;
+  const words = totalWordsAll();
+  const skills = new Set(TOPICS.filter(t=>t.level==='pre').map(t=>t.skill==='part1'?'listening':t.skill)).size;
+  return {units, words, skills};
+}
+function renderHomeHero(){
+  const scr = document.getElementById('topicScreen'); if(!scr) return;
+  let hero = document.getElementById('homeHero');
+  if(!hero){ hero = document.createElement('section'); hero.id = 'homeHero'; scr.prepend(hero); }
+  const s = homeStats();
+  if(isGuest()){
+    hero.className = 'home-hero';
+    hero.innerHTML = `
+      <div class="hh-main">
+        <span class="hh-kicker">IVY English · Tự học từ vựng IELTS</span>
+        <h1>Học từ vựng đúng giáo trình,<br><em>chơi game</em> để nhớ lâu hơn.</h1>
+        <p>Từ vựng Listening, Reading, Speaking và Writing Task 1 theo từng unit của lớp Pre-IELTS và IELTS tại IVY. Học từng từ, chơi game, luyện câu và ôn tập theo lịch nhắc.</p>
+        <div class="hh-cta">
+          <button class="hh-btn primary" id="hhExplore">Khám phá các unit ↓</button>
+          <button class="hh-btn" id="hhLogin">🔑 Đăng nhập để lưu tiến độ</button>
+        </div>
+        <div class="hh-stats">
+          <div><b>${s.words.toLocaleString('vi-VN')}</b><span>từ & cụm từ</span></div>
+          <div><b>${s.units}</b><span>unit / chủ đề</span></div>
+          <div><b>${s.skills}</b><span>kỹ năng</span></div>
+        </div>
+      </div>
+      <div class="hh-features">
+        <div><i>🧭</i><b>Học kỹ từng từ</b><span>Nghĩa, phát âm, hình ảnh, ví dụ và mẹo nhớ, thẻ lật</span></div>
+        <div><i>🎮</i><b>9 trò chơi</b><span>Đua thuyền, ong đánh vần, mưa sao băng… có nhạc và hiệu ứng</span></div>
+        <div><i>✍️</i><b>Luyện tập</b><span>Điền từ, sắp xếp câu, dictation, đặt câu theo biểu đồ</span></div>
+        <div><i>🔁</i><b>Ôn tập thông minh</b><span>Nhắc ôn đúng lúc sắp quên, theo dõi % hoàn thành</span></div>
+      </div>
+      <ol class="hh-steps">
+        <li><b>1</b> Chọn cấp độ và kỹ năng</li>
+        <li><b>2</b> Mở unit, xem thẻ từ</li>
+        <li><b>3</b> Đăng nhập khi bắt đầu làm bài</li>
+        <li><b>4</b> Nộp kết quả cho cô</li>
+      </ol>`;
+    document.getElementById('hhExplore').onclick = ()=>{ const el = document.querySelector('#topicScreen .level-nav, #topicScreen [class*="level"], #topicGrid'); (el||document.getElementById('topicGrid')).scrollIntoView({behavior:'smooth', block:'start'}); };
+    document.getElementById('hhLogin').onclick = ()=> showLogin();
+  } else {
+    const due = (typeof dueKeys==='function') ? dueKeys().length : 0;
+    const learned = (typeof learnedKeys==='function') ? learnedKeys().length : 0;
+    hero.className = 'home-hero compact';
+    hero.innerHTML = `
+      <div class="hh-welcome">
+        <div><span class="hh-kicker">Chào mừng trở lại</span>
+          <h2>${escHtml(currentStudent.name)} <small>· ${escHtml(currentStudent.cls)}</small></h2></div>
+        <div class="hh-mini">
+          <div><b>${learned}</b><span>từ đã học</span></div>
+          <div><b>${(typeof masteredAll==='function') ? masteredAll() : 0}</b><span>đã thuộc</span></div>
+          <div><b>${(typeof currentStreak==='function') ? currentStreak() : 0}🔥</b><span>ngày liên tiếp</span></div>
+        </div>
+        <div class="hh-cta">
+          ${due ? `<button class="hh-btn primary" id="hhDue">🔁 Ôn ${due} từ đến hạn</button>` : `<span class="hh-ok">✅ Không có từ cần ôn hôm nay</span>`}
+          <button class="hh-btn" id="hhReport">📤 Nộp kết quả</button>
+        </div>
+      </div>`;
+    const d = document.getElementById('hhDue'); if(d) d.onclick = ()=> openReviewSession(null);
+    document.getElementById('hhReport').onclick = ()=> showReport();
+  }
+}
+function enterGuest(){
+  currentStudent = null;
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('studentChip').innerHTML = '🔑 Đăng nhập';
+  document.getElementById('topicWorkspace').style.display = 'none';
+  document.getElementById('topicScreen').style.display = 'block';
+  renderTopicGrid(); renderBadgeShelf(); updateHeaderStats();
+  renderHomeHero();
+}
+(function(){
+  const _grid = renderTopicGrid;
+  renderTopicGrid = function(){ _grid(); if(document.getElementById('homeHero')) renderHomeHero(); };
+})();
+if(!currentStudent) enterGuest(); else renderHomeHero();
 
 </script>
 </body>
