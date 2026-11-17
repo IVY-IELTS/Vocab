@@ -1251,6 +1251,18 @@ nav.sections .sec-pct.full{background:var(--ar-leaf);color:#fff;}
   .hh-steps{grid-template-columns:1fr 1fr;}
   .hh-stats{gap:18px;}
 }
+#studentChip.chip-login{background:#C0562C!important;color:#fff!important;border-color:#C0562C!important;font-weight:800;padding:8px 18px;box-shadow:0 4px 14px #C0562C44;}
+.hh-asg{margin-top:14px;background:#FBF8F0;border:1px solid #E5DDCB;border-radius:18px;padding:14px 18px;}
+.hh-asg h3{margin:0 0 8px;font-family:Georgia,serif;font-size:19px;color:#1F2B3A;}
+.hh-asg-row{display:flex;gap:14px;align-items:center;padding:10px 0;border-top:1px dashed #E5DDCB;}
+.hh-asg-row:first-of-type{border-top:none;}
+.hh-asg-row .grow{flex:1;min-width:0;}
+.hh-asg-row b{color:#1F2B3A;}
+.hh-asg-row small{display:block;color:#54627A;font-size:13px;margin-top:2px;}
+.hh-asg-due{text-align:right;font-size:13px;color:#54627A;white-space:nowrap;}
+.hh-asg-row.done .hh-asg-due b{color:#2C8443;} .hh-asg-row.late .hh-asg-due b{color:#B0463C;}
+.hh-btn.small{font-size:13.5px;padding:8px 14px;}
+.cl-foot{font-size:13px;color:#54627A;margin-top:14px;} .cl-foot a{color:#C0562C;font-weight:700;}
 
 </style>
 </head>
@@ -6449,7 +6461,7 @@ renderBadgeShelf();
   const lastId = storage.get('last');
   const list = storage.get('students') || [];
   const s = list.find(x=>x.id===lastId);
-  if(s) loginAs({id:s.id, name:s.name, cls:s.cls}); /* khách: guest.js lo phần còn lại */
+  if(s) loginAs({id:s.id, name:s.name, cls:s.cls, cloud:!!s.cloud}); /* khách: guest.js lo phần còn lại */
 })();
 </script>
 <script>
@@ -6931,6 +6943,7 @@ function requireLogin(action, why){
   loginAs = function(student){
     const pend = PENDING_AFTER_LOGIN; PENDING_AFTER_LOGIN = null;
     _login(student);
+    const chip = document.getElementById('studentChip'); if(chip) chip.classList.remove('chip-login');
     renderHomeHero();
     if(pend) setTimeout(pend, 30);
   };
@@ -7045,6 +7058,24 @@ function renderHomeHero(){
           <button class="hh-btn" id="hhReport">📤 Nộp kết quả</button>
         </div>
       </div>`;
+    const asg = (typeof CLOUD!=='undefined' && currentStudent.cloud) ? CLOUD.assignments : [];
+    if(asg && asg.length){
+      const today = localDateStr();
+      const box = document.createElement('div'); box.className = 'hh-asg';
+      box.innerHTML = `<h3>📌 Bài tập của lớp</h3>` + asg.map(a=>{
+        const pct = assignmentProgress(a);
+        const late = a.due && a.due < today && pct < 80;
+        const names = (a.topicIds||[]).map(id=>{ const t = TOPICS.find(x=>x.id===id); return t ? topicLongName(t.id) : null; }).filter(Boolean);
+        const parts = (a.parts||[]).map(p=>({learn:'Learn',game:'Game',practice:'Practice',review:'Review'})[p]||p).join(' · ');
+        return `<div class="hh-asg-row ${pct>=80?'done':late?'late':''}">
+          <div class="grow"><b>${escHtml(a.title || names.join(', '))}</b>
+            <small>${escHtml(names.join(' · '))}${parts ? ' — ' + escHtml(parts) : ''}${a.note ? '<br>' + escHtml(a.note) : ''}</small></div>
+          <div class="hh-asg-due">${a.due ? 'Hạn ' + escHtml(a.due.split('-').reverse().join('/')) : ''}<br><b>${pct}%</b>${pct>=80?' ✅':late?' ⏰':''}</div>
+          <button class="hh-btn primary small" data-open="${escHtml((a.topicIds||[])[0]||'')}">Làm bài</button></div>`;
+      }).join('');
+      hero.appendChild(box);
+      box.querySelectorAll('[data-open]').forEach(b=> b.onclick = ()=>{ if(b.dataset.open) openTopic(b.dataset.open); });
+    }
     const d = document.getElementById('hhDue'); if(d) d.onclick = ()=> openReviewSession(null);
     document.getElementById('hhReport').onclick = ()=> showReport();
   }
@@ -7052,7 +7083,7 @@ function renderHomeHero(){
 function enterGuest(){
   currentStudent = null;
   document.getElementById('loginOverlay').classList.remove('show');
-  document.getElementById('studentChip').innerHTML = '🔑 Đăng nhập';
+  const chip = document.getElementById('studentChip'); chip.innerHTML = '🔑 Đăng nhập / Vào lớp'; chip.classList.add('chip-login');
   document.getElementById('topicWorkspace').style.display = 'none';
   document.getElementById('topicScreen').style.display = 'block';
   renderTopicGrid(); renderBadgeShelf(); updateHeaderStats();
@@ -7063,6 +7094,249 @@ function enterGuest(){
   renderTopicGrid = function(){ _grid(); if(document.getElementById('homeHero')) renderHomeHero(); };
 })();
 if(!currentStudent) enterGuest(); else renderHomeHero();
+
+</script>
+<script>
+/* ===================================================================
+   LỚP HỌC TRÊN MẠNG (Firebase)
+   - Học sinh đăng nhập: Mã lớp + Họ tên + PIN 4 số (đổi máy vẫn học tiếp)
+   - Tiến độ tự lưu lên Firestore: students/{uid}
+   - Bài được giao: classes/{code}/assignments
+   Khi chưa có FIREBASE_CONFIG, web chạy như cũ (lưu trên máy).
+   =================================================================== */
+const FIREBASE_CONFIG = null;
+const FB_VER = '10.12.2';
+const STUDENT_EMAIL_DOMAIN = 'hocsinh.ivy-word-quest.app';
+const CLOUD = {ready:false, auth:null, db:null, assignments:[], className:'', pushTimer:null, lastPush:0, status:''};
+
+function cloudOn(){ return !!FIREBASE_CONFIG; }
+function loadScriptOnce(src){
+  return new Promise((res, rej)=>{
+    if(document.querySelector(`script[data-src="${src}"]`)) return res();
+    const s = document.createElement('script'); s.src = src; s.dataset.src = src; s.async = true;
+    s.onload = ()=> res(); s.onerror = ()=> rej(new Error('Không tải được ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function cloudInit(){
+  if(!cloudOn()) return false;
+  if(CLOUD.ready) return true;
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  await loadScriptOnce(base + 'firebase-app-compat.js');
+  await Promise.all([loadScriptOnce(base + 'firebase-auth-compat.js'), loadScriptOnce(base + 'firebase-firestore-compat.js'),
+                     loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js')]);
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  CLOUD.auth = firebase.auth(); CLOUD.db = firebase.firestore();
+  CLOUD.ready = true;
+  return true;
+}
+function normClassCode(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/Đ/g,'D').replace(/[^A-Z0-9-]/g,''); }
+function slugName(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+function studentEmail(code, name){ return `${code.toLowerCase()}.${slugName(name)}@${STUDENT_EMAIL_DOMAIN}`; }
+function studentPass(code, pin){ return `IVY#${pin}#${code}`; }
+function authMsg(e){
+  const c = (e && e.code) || '';
+  if(c==='auth/network-request-failed') return 'Không có mạng hoặc mạng chập chờn. Em kiểm tra kết nối rồi thử lại nhé.';
+  if(c==='auth/too-many-requests') return 'Em nhập sai nhiều lần quá. Đợi vài phút rồi thử lại nhé.';
+  if(c==='auth/operation-not-allowed') return 'Hệ thống lớp học chưa được cô bật xong. Em báo cô giúp nhé.';
+  return 'Có lỗi khi đăng nhập (' + (c || (e && e.message) || 'không rõ') + '). Em thử lại hoặc báo cô.';
+}
+
+/* ----- dữ liệu gọn để lưu lên mạng ----- */
+function compactProgress(){
+  const data = {savedAt: Date.now()};
+  PERSIST_KEYS.forEach(k=> data[k] = state[k]);
+  const st = {}, ws = {};
+  Object.keys(state.status||{}).forEach(k=>{ if(state.status[k] && state.status[k]!=='new') st[k] = state.status[k]; });
+  Object.keys(state.wordStars||{}).forEach(k=>{ if(state.wordStars[k]) ws[k] = state.wordStars[k]; });
+  data.status = st; data.wordStars = ws;
+  return data;
+}
+function progressSummary(){
+  const topics = [];
+  TOPICS.forEach(t=>{
+    const p = topicProgress(t.id), sec = sectionScores(t.id);
+    if(p.done || sec.learn || sec.game || sec.practice || sec.review) topics.push({id:t.id, learned:p.done, total:p.total, mastered:p.mastered, sec});
+  });
+  const L = state.gameLog || [];
+  const c = L.reduce((a,x)=>a+x.correct,0), t = L.reduce((a,x)=>a+x.total,0);
+  return {
+    level: state.level, score: state.score, streak: currentStreak(),
+    learned: learnedKeys().length, mastered: masteredAll(), stars: totalStars(),
+    games: L.length, gameAcc: t ? Math.round(c/t*100) : null,
+    reviews: (state.reviewLog||[]).length, due: dueKeys().length,
+    weak: weakKeys().slice(0,15).map(k=>{ const x = wordByKey(k); return x ? {w:x.w.word, t:x.topicId, n:state.srs[k].wrong} : null; }).filter(Boolean),
+    topics
+  };
+}
+function cloudUser(){ return CLOUD.ready && CLOUD.auth.currentUser; }
+function cloudSchedulePush(delay){
+  if(!cloudOn() || !currentStudent || !currentStudent.cloud) return;
+  clearTimeout(CLOUD.pushTimer);
+  CLOUD.pushTimer = setTimeout(cloudPush, delay==null ? 6000 : delay);
+}
+async function cloudPush(){
+  const u = cloudUser();
+  if(!u || !currentStudent || currentStudent.id !== u.uid) return;
+  try{
+    let blob = LZString.compressToBase64(JSON.stringify(compactProgress()));
+    if(blob.length > 900000) blob = null;          // quá lớn thì chỉ lưu phần tóm tắt
+    await CLOUD.db.collection('students').doc(u.uid).set({
+      name: currentStudent.name, classCode: currentStudent.cls, summary: progressSummary(),
+      blob, clientUpdatedAt: Date.now(), updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true});
+    CLOUD.lastPush = Date.now(); cloudBadge('ok');
+  }catch(e){ cloudBadge('err'); }
+}
+function cloudBadge(kind){
+  CLOUD.status = kind;
+  const chip = document.getElementById('studentChip'); if(!chip || !currentStudent) return;
+  const dot = kind==='ok' ? '☁️' : kind==='err' ? '⚠️' : '';
+  chip.innerHTML = `👤 ${escHtml(currentStudent.name)} · ${escHtml(currentStudent.cls)} ${dot}`;
+  chip.title = kind==='ok' ? 'Đã lưu lên lớp học trực tuyến' : kind==='err' ? 'Chưa lưu được lên mạng, web sẽ thử lại' : '';
+}
+async function cloudPull(uid){
+  try{
+    const snap = await CLOUD.db.collection('students').doc(uid).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    const local = storage.get('p_'+uid);
+    if(d.blob && (!local || (d.clientUpdatedAt||0) > (local.savedAt||0))){
+      const data = JSON.parse(LZString.decompressFromBase64(d.blob));
+      if(data){ data.student = {id:uid, name:d.name, cls:d.classCode, cloud:true}; storage.set('p_'+uid, data); }
+    }
+  }catch(e){ /* không có mạng: dùng dữ liệu trên máy */ }
+}
+async function cloudLoadAssignments(){
+  CLOUD.assignments = [];
+  if(!cloudUser() || !currentStudent) return;
+  try{
+    const qs = await CLOUD.db.collection('classes').doc(currentStudent.cls).collection('assignments').get();
+    CLOUD.assignments = qs.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=> String(a.due||'').localeCompare(String(b.due||'')));
+  }catch(e){}
+  renderHomeHero();
+}
+function assignmentProgress(a){
+  const parts = (a.parts && a.parts.length) ? a.parts : ['learn','game','practice','review'];
+  const ids = (a.topicIds||[]).filter(id=> TOPICS.some(t=>t.id===id));
+  if(!ids.length) return 0;
+  const vals = ids.map(id=>{ const s = sectionScores(id); return parts.reduce((x,p)=>x+(s[p]||0),0)/parts.length; });
+  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+
+/* ----- màn đăng nhập theo lớp ----- */
+function showCloudLogin(why){
+  clearAllTimers();
+  const ov = document.getElementById('loginOverlay');
+  const last = storage.get('cloud_last') || {};
+  document.getElementById('loginCard').innerHTML = `
+    <button class="rv-close" id="loginX" title="Đóng">✕</button>
+    <h2>${why ? 'Đăng nhập để tiếp tục' : 'Vào lớp học'} 👋</h2>
+    <p class="rv-lead">${why ? `<b>${escHtml(why)}</b><br>` : ''}Nhập <b>mã lớp</b> cô gửi, <b>họ tên</b> và <b>mã PIN 4 số</b>. Lần đầu, em tự chọn PIN và nhớ nó để lần sau đăng nhập trên máy nào cũng học tiếp được.</p>
+    <label class="login-field"><span>Mã lớp</span><input id="clCode" maxlength="20" placeholder="VD: TH-K1" autocomplete="off" value="${escHtml(last.code||'')}" style="text-transform:uppercase"></label>
+    <label class="login-field"><span>Họ và tên</span><input id="clName" maxlength="40" placeholder="VD: Nguyễn Minh Anh" autocomplete="name" value="${escHtml(last.name||'')}"></label>
+    <label class="login-field"><span>Mã PIN (4 số)</span><input id="clPin" maxlength="4" inputmode="numeric" type="password" placeholder="••••" autocomplete="off"></label>
+    <div class="login-err" id="loginErr"></div>
+    <div class="pg-actions">
+      <button class="pg-btn go" id="clGo" style="font-size:15px;padding:12px 28px;">Vào học →</button>
+      <button class="pg-btn alt" id="clLater" style="font-size:14px;padding:11px 20px;">Để sau, xem tiếp</button>
+    </div>
+    <p class="cl-foot"><a href="teacher.html">👩‍🏫 Trang giáo viên</a> · Quên PIN? Em nhờ cô đặt lại.</p>`;
+  ov.classList.add('show');
+  const close = ()=>{ PENDING_AFTER_LOGIN = null; ov.classList.remove('show'); };
+  document.getElementById('loginX').onclick = close;
+  document.getElementById('clLater').onclick = close;
+  const go = async ()=>{
+    const err = document.getElementById('loginErr'), btn = document.getElementById('clGo');
+    const code = normClassCode(document.getElementById('clCode').value);
+    const name = document.getElementById('clName').value.trim().replace(/\s+/g,' ');
+    const pin = document.getElementById('clPin').value.trim();
+    if(!code){ err.textContent = 'Em nhập mã lớp cô gửi nhé.'; return; }
+    if(name.split(' ').length < 2){ err.textContent = 'Em nhập đầy đủ họ và tên nhé.'; return; }
+    if(!/^\d{4}$/.test(pin)){ err.textContent = 'Mã PIN gồm đúng 4 chữ số.'; return; }
+    btn.disabled = true; err.style.color = 'var(--ink-soft)'; err.textContent = 'Đang kết nối lớp học…';
+    try{
+      await cloudInit();
+      const cls = await CLOUD.db.collection('classes').doc(code).get();
+      if(!cls.exists){ err.style.color = ''; err.textContent = `Không tìm thấy lớp có mã "${code}". Em kiểm tra lại mã cô gửi nhé.`; btn.disabled = false; return; }
+      const email = studentEmail(code, name), pass = studentPass(code, pin);
+      let cred, isNew = false;
+      try{ cred = await CLOUD.auth.signInWithEmailAndPassword(email, pass); }
+      catch(e){
+        if(e.code==='auth/network-request-failed' || e.code==='auth/too-many-requests') throw e;
+        try{ cred = await CLOUD.auth.createUserWithEmailAndPassword(email, pass); isNew = true; }
+        catch(e2){
+          if(e2.code==='auth/email-already-in-use'){ err.style.color = ''; err.textContent = 'Tên này trong lớp đã có tài khoản và mã PIN chưa đúng. Em nhập lại PIN, hoặc nhờ cô đặt lại.'; btn.disabled = false; return; }
+          throw e2;
+        }
+      }
+      const uid = cred.user.uid;
+      if(isNew){
+        await CLOUD.db.collection('students').doc(uid).set({name, classCode:code, createdAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+      } else {
+        await cloudPull(uid);
+      }
+      CLOUD.className = (cls.data()||{}).name || '';
+      storage.set('cloud_last', {code, name});
+      loginAs({id:uid, name, cls:code, cloud:true});
+      cloudSchedulePush(1500);
+    }catch(e){ err.style.color = ''; err.textContent = authMsg(e); btn.disabled = false; }
+  };
+  document.getElementById('clGo').onclick = go;
+  ['clCode','clName','clPin'].forEach(id=> document.getElementById(id).addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }));
+  setTimeout(()=> document.getElementById(last.code ? 'clPin' : 'clCode').focus(), 50);
+}
+
+if(cloudOn()){
+  /* thay màn đăng nhập cũ */
+  const _showLoginLocal = showLogin;
+  showLogin = function(why){ showCloudLogin(why); };
+  /* lưu lên mạng mỗi khi lưu trên máy */
+  const _save = saveProgress;
+  saveProgress = function(){ _save(); cloudSchedulePush(); };
+  /* đăng xuất / đổi tài khoản */
+  const _login2 = loginAs;
+  loginAs = function(student){
+    _login2(student);
+    if(student.cloud){ cloudBadge(CLOUD.status); cloudLoadAssignments(); }
+  };
+  document.getElementById('studentChip').onclick = ()=>{
+    if(!currentStudent) return showLogin();
+    showCloudAccount();
+  };
+  /* học sinh quay lại: khôi phục phiên đăng nhập trên mạng */
+  if(currentStudent && currentStudent.cloud){
+    cloudInit().then(()=> CLOUD.auth.onAuthStateChanged(u=>{
+      if(u && currentStudent && u.uid===currentStudent.id){ cloudBadge('ok'); cloudLoadAssignments(); cloudSchedulePush(3000); }
+    })).catch(()=>{});
+  }
+  /* học sinh dùng tài khoản cũ (chỉ trên máy) thì mời vào lớp */
+  if(currentStudent && !currentStudent.cloud){
+    setTimeout(()=>{ if(currentStudent && !currentStudent.cloud) showCloudLogin('Web đã có lớp học trực tuyến. Em vào lớp bằng mã lớp cô gửi để cô theo dõi được tiến độ nhé.'); }, 800);
+  }
+}
+function showCloudAccount(){
+  const ov = document.getElementById('loginOverlay');
+  document.getElementById('loginCard').innerHTML = `
+    <button class="rv-close" id="loginX" title="Đóng">✕</button>
+    <h2>${escHtml(currentStudent.name)}</h2>
+    <p class="rv-lead">Lớp <b>${escHtml(currentStudent.cls)}</b>${CLOUD.className ? ' · ' + escHtml(CLOUD.className) : ''}<br>
+      ${CLOUD.status==='ok' ? '☁️ Tiến độ đã được lưu lên lớp học, cô xem được và em đổi máy vẫn học tiếp.' : 'Tiến độ đang được lưu trên máy này và sẽ tự gửi lên lớp khi có mạng.'}</p>
+    <div class="pg-actions">
+      <button class="pg-btn go" id="acSync">☁️ Lưu lên lớp ngay</button>
+      <button class="pg-btn alt" id="acOut">Đăng xuất</button>
+    </div>`;
+  ov.classList.add('show');
+  document.getElementById('loginX').onclick = ()=> ov.classList.remove('show');
+  document.getElementById('acSync').onclick = async ()=>{ await cloudPush(); showCloudAccount(); };
+  document.getElementById('acOut').onclick = async ()=>{
+    try{ await cloudPush(); }catch(e){}
+    try{ if(CLOUD.ready) await CLOUD.auth.signOut(); }catch(e){}
+    storage.set('last', null);
+    ov.classList.remove('show');
+    enterGuest();
+  };
+}
 
 </script>
 </body>
