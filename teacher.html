@@ -100,7 +100,7 @@ tr.click:hover td{background:#FFF7EC;cursor:pointer}
       <button data-t="students" class="on">👩‍🎓 Học sinh</button>
       <button data-t="assign">📌 Giao bài</button>
       <button data-t="stats">📊 Thống kê</button>
-      <button data-t="reading">📖 Pre/Post-Reading</button>
+      <button data-t="reading">📖 Reading tasks & Vocabulary Test</button>
       <button data-t="classes">🏫 Quản lý lớp</button>
     </div>
     <div id="panel"></div>
@@ -259,7 +259,7 @@ function studentDetail(s){
       ${tps.map(t=>`<tr><td>${esc(topicName(t.id))}</td><td>${t.learned}/${t.total} · thuộc ${t.mastered}</td><td>${bar(t.sec.learn)}</td><td>${bar(t.sec.game)}</td><td>${bar(t.sec.practice)}</td><td>${bar(t.sec.review)}</td></tr>`).join('')}
     </tbody></table></div>` : '<p class="muted">Em chưa học unit nào.</p>'}
     ${Object.keys(rdOf(s)).length ? `<h3 style="margin:14px 0 6px">Pre/Post-Reading</h3><div class="tscroll"><table><thead><tr><th>Bài</th><th>Điểm lần đầu</th><th>Thời gian</th><th>Chống gian lận</th><th>Lần làm</th></tr></thead><tbody>
-      ${Object.entries(rdOf(s)).sort().map(([k,x])=>`<tr><td>${esc(topicName(x.tid))} · ${RT_PART[x.part]||x.part}<br><b>${esc(x.title)}</b></td><td>${x.sc}/${x.tot}</td><td>${rdDur(x.dur)}</td><td>${rdFlags(x)}</td><td>${x.tries||1}</td></tr>`).join('')}
+      ${Object.entries(rdOf(s)).sort().map(([k,x])=>`<tr><td>${esc(topicName(x.tid))} · ${RT_PART[x.part]||x.part}<br><b>${esc(x.title)}</b></td><td>${x.test ? x.ten+'/'+(x.scale||10)+' điểm' : x.sc+'/'+x.tot}</td><td>${rdDur(x.dur)}</td><td>${rdFlags(x)}</td><td>${x.tries||1}</td></tr>`).join('')}
     </tbody></table></div>` : ''}
     <h3 style="margin:14px 0 6px">Từ hay sai</h3>
     <p>${(sm.weak||[]).length ? sm.weak.map(w=>`<span class="pill y" style="margin:2px">${esc(w.w)} ×${w.n}</span>`).join(' ') : '<span class="muted">Chưa có.</span>'}</p>
@@ -274,7 +274,7 @@ function studentDetail(s){
 
 
 /* ---------- Pre/Post-Reading ---------- */
-const RT_PART = {pre:'Pre-Reading', post:'Post-Reading'};
+const RT_PART = {pre:'Pre-Reading', post:'Post-Reading', test:'Vocabulary Test'};
 function rdOf(s){ return (sumOf(s).reading) || {}; }
 function rdDur(sec){ sec = sec||0; return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
 function rdFlags(r){
@@ -297,14 +297,15 @@ function renderReading(){
   $('panel').innerHTML = keys.map(({k,r})=>{
     const done = T.students.filter(s=> rdOf(s)[k]);
     const avg = done.length ? Math.round(done.reduce((a,s)=>{ const x = rdOf(s)[k]; return a + (x.tot ? x.sc/x.tot*100 : 0); },0)/done.length) : null;
+    const avgTen = r.test && done.length ? (done.reduce((a,s)=> a + (rdOf(s)[k].ten||0), 0)/done.length).toFixed(1) : null;
     const flagged = done.filter(s=>{ const x = rdOf(s)[k]; return x.viol || (x.end && x.end!=='done'); }).length;
     return `<div class="card">
       <h3 style="margin:0 0 4px">${esc(r.title)}</h3>
-      <p class="muted" style="margin:0 0 10px">${esc(topicName(r.tid))} · ${RT_PART[r.part]||r.part} · ${done.length}/${T.students.length} em đã làm${avg!=null?` · điểm TB ${avg}%`:''}${flagged?` · <b style="color:#8F2E24">${flagged} em cần chú ý</b>`:''}</p>
+      <p class="muted" style="margin:0 0 10px">${esc(topicName(r.tid))} · ${RT_PART[r.part]||r.part} · ${done.length}/${T.students.length} em đã làm${avgTen!=null ? ` · điểm TB ${avgTen}/${r.scale||10}` : avg!=null?` · điểm TB ${avg}%`:''}${flagged?` · <b style="color:#8F2E24">${flagged} em cần chú ý</b>`:''}</p>
       <div class="tscroll"><table><thead><tr><th>Học sinh</th><th>Điểm lần đầu</th><th>Thời gian</th><th>Làm lúc</th><th>Chống gian lận</th><th>Số lần làm</th><th>Tự luận</th></tr></thead><tbody>
       ${T.students.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','vi')).map(s=>{ const x = rdOf(s)[k];
         if(!x) return `<tr><td><b>${esc(s.name)}</b></td><td colspan="6"><span class="pill n">chưa làm</span></td></tr>`;
-        return `<tr><td><b>${esc(s.name)}</b></td><td>${x.sc}/${x.tot} ${bar(x.tot?Math.round(x.sc/x.tot*100):0)}</td><td>${rdDur(x.dur)}</td><td>${fmtDate(x.at)}</td><td>${rdFlags(x)}</td><td>${x.tries||1}${x.best!=null&&x.best>x.sc?` · tốt nhất ${x.best}/${x.tot}`:''}</td>
+        return `<tr><td><b>${esc(s.name)}</b></td><td>${x.test ? `<b>${x.ten}/${x.scale||10}</b> điểm (${x.sc}/${x.tot} câu)` : `${x.sc}/${x.tot}`} ${bar(x.tot?Math.round(x.sc/x.tot*100):0)}</td><td>${rdDur(x.dur)}</td><td>${fmtDate(x.at)}</td><td>${rdFlags(x)}</td><td>${x.tries||1}${x.best!=null&&x.best>x.sc?` · tốt nhất ${x.best}/${x.tot}`:''}</td>
           <td>${(x.open||[]).length?`<button class="btn small" data-rd="${s.uid}|${esc(k)}">Xem ${(x.open||[]).length} câu</button>`:'—'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`; }).join('') + `<p class="muted">Điểm chỉ tính câu trắc nghiệm, True/False và nối từ. Câu tự luận cô bấm "Xem" để đọc và chấm. "Rời trang" là số lần em chuyển tab hoặc mở ứng dụng khác khi đang làm bài.</p>`;
   $('panel').querySelectorAll('[data-rd]').forEach(b=> b.onclick = ()=>{ const [uid, ...rest] = b.dataset.rd.split('|'); rdOpen(T.students.find(s=>s.uid===uid), rest.join('|')); });
@@ -454,8 +455,8 @@ async function exportExcel(){
   T.students.forEach(s=> (sumOf(s).topics||[]).forEach(t=> unitRows.push([s.name, topicName(t.id), t.learned, t.total, t.mastered, t.sec.learn||0, t.sec.game||0, t.sec.practice||0, t.sec.review||0])));
   const asgRows = [['Bài giao','Hạn','Học sinh','Tiến độ %','Trạng thái']];
   T.assignments.forEach(a=> T.students.forEach(s=>{ const p = asgPct(s,a); asgRows.push([a.title || (a.topicIds||[]).map(topicName).join(', '), a.due, s.name, p, p>=80?'Hoàn thành':(a.due && a.due<today())?'Trễ hạn':'Chưa xong']); }));
-  const rdRows = [['Học sinh','Unit','Phần','Bài','Điểm','Tổng','%','Thời gian (giây)','Rời trang','Kết thúc','Số lần làm','Tự luận']];
-  T.students.forEach(s=> Object.values(rdOf(s)).forEach(x=> rdRows.push([s.name, topicName(x.tid), RT_PART[x.part]||x.part, x.title, x.sc, x.tot, x.tot?Math.round(x.sc/x.tot*100):0, x.dur||0, x.viol||0,
+  const rdRows = [['Học sinh','Unit','Phần','Bài','Số câu đúng','Tổng','%','Điểm /10','Thời gian (giây)','Rời trang','Kết thúc','Số lần làm','Tự luận']];
+  T.students.forEach(s=> Object.values(rdOf(s)).forEach(x=> rdRows.push([s.name, topicName(x.tid), RT_PART[x.part]||x.part, x.title, x.sc, x.tot, x.tot?Math.round(x.sc/x.tot*100):0, x.test ? x.ten : '', x.dur||0, x.viol||0,
     ({done:'Nộp bình thường', viol:'Tự nộp do rời trang', abandoned:'Bỏ dở', left:'Thoát giữa chừng'})[x.end]||x.end, x.tries||1, (x.open||[]).map((o,i)=>`${i+1}. ${o.a||'(trống)'}`).join(' | ')])));
   try{
     if(!window.XLSX) await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js');
