@@ -57,6 +57,39 @@ tr.click:hover td{background:#FFF7EC;cursor:pointer}
 .topicpick h4{margin:10px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--rust)}
 .topicpick label{display:flex;gap:8px;align-items:center;font-size:14px;padding:3px 0}
 .topicpick input{width:auto}
+details.rdo{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0;background:#fff}
+details.rdo summary{cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rdo-list{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.rdo-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.rdo-row:hover{background:#F4F6F9}.rdo-row.on{background:#EAF6EE}
+.rdo-row input{width:18px;height:18px}
+.gfilters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px}.gfilters .grow{flex:1}
+.gfilters select{font:inherit;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:#fff}
+.gchip{font:inherit;font-size:13.5px;font-weight:700;padding:7px 12px;margin:2px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.gchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.gwatch{display:flex;flex-direction:column;gap:4px;background:#FFF8E6;border-color:#F0D58A}.gwatch a{cursor:pointer;text-decoration:underline}
+.gwrap{overflow:auto;max-height:70vh;border-radius:12px;border:1px solid var(--line)}
+.gtable{font-size:14px;border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+.gtable th{position:sticky;top:0;background:var(--navy);color:#fff;font-size:12.5px;padding:8px 6px;white-space:nowrap;z-index:2;cursor:help}
+.gtable td{border-bottom:1px solid #EFEAE0;padding:5px 4px;text-align:center;background:#fff}
+.gtable .gname{position:sticky;left:0;z-index:1;text-align:left;min-width:170px;padding-left:12px;background:#fff;border-right:1px solid var(--line)}
+.gtable th.gname{z-index:3;background:var(--navy)}
+.gtable .gname a{color:var(--ink);font-weight:700;cursor:pointer}.gtable .gname a:hover{color:var(--rust)}
+.gtable .gavg{background:#FBF8F0;font-weight:800}.gtable th.gavg{background:#2E4763}
+.gtable .gdone{color:var(--soft);font-size:12.5px}
+.gv{display:inline-block;min-width:44px;padding:5px 6px;border-radius:8px;font-weight:800;font-size:14px;border:none;font-family:inherit;line-height:1.1}
+button.gv{cursor:pointer}button.gv:hover{outline:2px solid var(--navy)}
+.gv sup{font-size:9px;margin-left:1px}
+.gv.g{background:#CFEFD8;color:#1D6234}.gv.b{background:#DCEBFA;color:#1F4E80}.gv.y{background:#FFF0C2;color:#7D5A08}.gv.r{background:#F8D3CE;color:#8F2E24}.gv.e{background:transparent;color:#B9B3A6;font-weight:600}
+.gt,.bt{color:#1D6234}.yt{color:#9A6B00}.rt{color:#B0463C}.et{color:#888}
+.gfoot td{background:#F4F1E8 !important;font-weight:700;border-top:2px solid var(--line)}.gfoot small{display:block;font-size:11px;color:var(--soft);font-weight:500}
+.glegend{font-size:12.5px;color:var(--soft);display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.glegend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-left:6px}.glegend i.g{background:#CFEFD8}.glegend i.b{background:#DCEBFA}.glegend i.y{background:#FFF0C2}.glegend i.r{background:#F8D3CE}
+.gnum{font-weight:700;font-size:14px}.gdate{font-size:12.5px;white-space:nowrap}
+.gmini{width:auto;min-width:320px}.gmini td{padding:6px 10px;border-bottom:1px solid #EFEAE0}
+.asgparts{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.asgparts>div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.asgparts .chips{margin-top:6px}.asgparts label.alt{opacity:.8;font-style:italic}
 </style>
 </head>
 <body>
@@ -97,10 +130,12 @@ tr.click:hover td{background:#FFF7EC;cursor:pointer}
       <span class="muted" id="clsInfo"></span>
     </div>
     <div class="tabs" id="tabs">
-      <button data-t="students" class="on">👩‍🎓 Học sinh</button>
+      <button data-t="students">👩‍🎓 Học sinh</button>
+      <button data-t="grades" class="on">🏆 Bảng điểm</button>
       <button data-t="assign">📌 Giao bài</button>
       <button data-t="stats">📊 Thống kê</button>
-      <button data-t="reading">📖 Reading tasks & Vocabulary Test</button>
+      <button data-t="accounts">🔑 Tài khoản học sinh</button>
+      <button data-t="reading">🔒 Mở bài & bài làm</button>
       <button data-t="classes">🏫 Quản lý lớp</button>
     </div>
     <div id="panel"></div>
@@ -114,7 +149,31 @@ const FIREBASE_CONFIG = {"apiKey":"AIzaSyBbCCN3nxizNFFT6IIXGaJrqoUdz9s6D2g","aut
 const CATALOG = [{"id":"Environment","label":"IELTS Reading · Environment","n":8,"group":"IELTS · Chủ đề"},{"id":"Education","label":"IELTS Reading · Education","n":8,"group":"IELTS · Chủ đề"},{"id":"Health","label":"IELTS Reading · Health","n":8,"group":"IELTS · Chủ đề"},{"id":"Technology","label":"IELTS Reading · Technology","n":8,"group":"IELTS · Chủ đề"},{"id":"Society","label":"IELTS Reading · Society","n":8,"group":"IELTS · Chủ đề"},{"id":"Family","label":"IELTS Reading · Family","n":44,"group":"IELTS · Chủ đề"},{"id":"PRE-L1","label":"Pre-IELTS Listening · Unit 1 Friends Abroad","n":34,"group":"Pre-IELTS · Listening"},{"id":"PRE-L2","label":"Pre-IELTS Listening · Unit 2 Hobbies, Interests and Sports","n":24,"group":"Pre-IELTS · Listening"},{"id":"PRE-L3","label":"Pre-IELTS Listening · Unit 3 Academic and Personal Interests","n":34,"group":"Pre-IELTS · Listening"},{"id":"PRE-L4","label":"Pre-IELTS Listening · Unit 4 On-Campus Services","n":39,"group":"Pre-IELTS · Listening"},{"id":"PRE-L5","label":"Pre-IELTS Listening · Unit 5 Studying, Exams and Revision","n":60,"group":"Pre-IELTS · Listening"},{"id":"PRE-L6","label":"Pre-IELTS Listening · Unit 6 Work","n":56,"group":"Pre-IELTS · Listening"},{"id":"PRE-L7","label":"Pre-IELTS Listening · Unit 7 Shopping and Spending","n":37,"group":"Pre-IELTS · Listening"},{"id":"PRE-L8","label":"Pre-IELTS Listening · Unit 8 Comparing Cultures","n":41,"group":"Pre-IELTS · Listening"},{"id":"PRE-L9","label":"Pre-IELTS Listening · Unit 9 Work-Life Balance","n":62,"group":"Pre-IELTS · Listening"},{"id":"PRE-L10","label":"Pre-IELTS Listening · Unit 10 Food and Cooking","n":52,"group":"Pre-IELTS · Listening"},{"id":"PRE-R1","label":"Pre-IELTS Reading · Unit 1 Family and Friends","n":40,"group":"Pre-IELTS · Reading"},{"id":"PRE-R2","label":"Pre-IELTS Reading · Unit 2 Traveling Around the World","n":41,"group":"Pre-IELTS · Reading"},{"id":"PRE-R3","label":"Pre-IELTS Reading · Unit 3 Being Human","n":47,"group":"Pre-IELTS · Reading"},{"id":"PRE-R4","label":"Pre-IELTS Reading · Unit 4 Business and Finance","n":63,"group":"Pre-IELTS · Reading"},{"id":"PRE-R5","label":"Pre-IELTS Reading · Unit 5 Conservation","n":54,"group":"Pre-IELTS · Reading"},{"id":"PRE-R6","label":"Pre-IELTS Reading · Unit 6 Transportation and Infrastructure","n":58,"group":"Pre-IELTS · Reading"},{"id":"PRE-R7","label":"Pre-IELTS Reading · Unit 7 Nature","n":57,"group":"Pre-IELTS · Reading"},{"id":"PRE-R8","label":"Pre-IELTS Reading · Unit 8 Job","n":49,"group":"Pre-IELTS · Reading"},{"id":"PRE-R9","label":"Pre-IELTS Reading · Unit 9 Education","n":55,"group":"Pre-IELTS · Reading"},{"id":"PRE-R10","label":"Pre-IELTS Reading · Unit 10 Food","n":58,"group":"Pre-IELTS · Reading"},{"id":"PRE-P1","label":"Listening Part 1 · Student Life · Phần 1","n":42,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P2","label":"Listening Part 1 · Student Life · Phần 2","n":46,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P3","label":"Listening Part 1 · Student Life · Phần 3","n":16,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P4","label":"Listening Part 1 · Travel and Transport · Phần 1","n":48,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P5","label":"Listening Part 1 · Travel and Transport · Phần 2","n":33,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P6","label":"Listening Part 1 · Services and Amenities · Phần 1","n":44,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P7","label":"Listening Part 1 · Services and Amenities · Phần 2","n":35,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P8","label":"Listening Part 1 · Daily Activities · Phần 1","n":32,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P9","label":"Listening Part 1 · Daily Activities · Phần 2","n":32,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P10","label":"Listening Part 1 · Daily Activities · Phần 3","n":34,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P11","label":"Listening Part 1 · Daily Activities · Phần 4","n":37,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P12","label":"Listening Part 1 · Daily Activities · Phần 5","n":35,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P13","label":"Listening Part 1 · Daily Activities · Phần 6","n":35,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P14","label":"Listening Part 1 · Daily Activities · Phần 7","n":18,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-P15","label":"Listening Part 1 · Health and Medical","n":42,"group":"Pre-IELTS · Listening Part 1"},{"id":"PRE-S1","label":"Pre-IELTS Speaking · Unit 1 Hobbies and Interests","n":60,"group":"Pre-IELTS · Speaking"},{"id":"PRE-W1","label":"Pre-IELTS Writing Task 1 · Unit 1 Introduction to Writing Task 1","n":83,"group":"Pre-IELTS · Writing Task 1"},{"id":"PRE-W2","label":"Pre-IELTS Writing Task 1 · Unit 2 Interpreting Charts & Comparing Data","n":52,"group":"Pre-IELTS · Writing Task 1"},{"id":"PRE-W3","label":"Pre-IELTS Writing Task 1 · Unit 3 Static Charts - Describing Data","n":64,"group":"Pre-IELTS · Writing Task 1"},{"id":"PRE-W4","label":"Pre-IELTS Writing Task 1 · Unit 4 Dynamic Charts: Trends and Overviews","n":84,"group":"Pre-IELTS · Writing Task 1"},{"id":"PRE-W5","label":"Pre-IELTS Writing Task 1 · Unit 5 Dynamic Charts: Line, Bar & Table","n":78,"group":"Pre-IELTS · Writing Task 1"},{"id":"PRE-W6","label":"Pre-IELTS Writing Task 1 · Unit 6 Dynamic Charts: Pie & Table","n":62,"group":"Pre-IELTS · Writing Task 1"}];
 const FB_VER = '10.12.2';
 const PARTS = {learn:'Learn', game:'Game', practice:'Practice', review:'Review'};
-const T = {db:null, auth:null, classes:[], cls:null, students:[], assignments:[], tab:'students', sort:{k:'name', d:1}};
+const ASGCAT = {"games":[{"id":"dash","title":"Word Dash","icon":"🏃"},{"id":"race","title":"Đua thuyền","icon":"🚤"},{"id":"memory","title":"Lật thẻ ghép đôi","icon":"🧩"},{"id":"bee","title":"Spelling Bee","icon":"🐝"},{"id":"meteor","title":"Mưa thiên thạch","icon":"☄️"},{"id":"whack","title":"Đập chuột từ","icon":"🔨"},{"id":"show","title":"Đố vui truyền hình","icon":"🎤"},{"id":"arena","title":"Đấu trường","icon":"⚔️"}],"acts":{"Environment":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"Education":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"Health":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"Technology":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"Society":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"Family":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-L1":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L2":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L3":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L4":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L5":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L6":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L7":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L8":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L9":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-L10":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-R1":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R2":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R3":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R4":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R5":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R6":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R7":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R8":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R9":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-R10":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-P1":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P2":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P3":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P4":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P5":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P6":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P7":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P8":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P9":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P10":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P11":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P12":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P13":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P14":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-P15":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"},{"id":"dictation","title":"Dictation"}],"PRE-S1":[{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W1":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W2":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W3":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W4":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W5":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}],"PRE-W6":[{"id":"sentence","title":"Đặt câu theo biểu đồ"},{"id":"sscramble","title":"Ghép câu biểu đồ"},{"id":"sgap","title":"Điền từ biểu đồ"},{"id":"struefalse","title":"Đúng hay sai?"},{"id":"smatch","title":"Nối nửa câu"},{"id":"guess","title":"Guess the Word"},{"id":"match-def","title":"Match Definition"},{"id":"collocation","title":"Collocation Builder"},{"id":"word-family","title":"Word Family"},{"id":"error","title":"Error Correction"},{"id":"sorting","title":"Topic Sorting"},{"id":"use","title":"Sắp xếp câu"}]}};
+const ASG_LEGACY = {learn:'learn', game:'gameall', practice:'practiceall', review:'review'};
+function asgItems(a){ return (a.items && a.items.length) ? a.items : ((a.parts && a.parts.length) ? a.parts : Object.keys(PARTS)).map(p=> ASG_LEGACY[p] || p); }
+function asgItemName(it){
+  if(it.startsWith('game:')){ const m = (ASGCAT.games||[]).find(x=>x.id===it.slice(5)); return m ? `${m.icon} ${m.title}` : it.slice(5); }
+  if(it.startsWith('act:')){ const id = it.slice(4); for(const k in (ASGCAT.acts||{})){ const x = ASGCAT.acts[k].find(y=>y.id===id); if(x) return x.title; } return id; }
+  return ({learn:'Learn', review:'Review (thuộc từ)', gameall:'Game (mọi game)', practiceall:'Practice (tất cả)', test:'Vocabulary Test', pre:'Pre-Reading', post:'Post-Reading'})[it] || it;
+}
+function asgItemVal(s, it, tid){
+  const tp = (sumOf(s).topics||[]).find(x=> x.id===tid) || {sec:{}, games:{}, acts:{}};
+  const sec = tp.sec || {};
+  if(it==='learn') return sec.learn||0; if(it==='review') return sec.review||0; if(it==='gameall') return sec.game||0; if(it==='practiceall') return sec.practice||0;
+  if(it.startsWith('game:')) return (tp.games||{})[it.slice(5)] ? 100 : 0;
+  if(it.startsWith('act:')){ const id = it.slice(4); if(!((ASGCAT.acts||{})[tid]||[]).some(x=>x.id===id)) return null; return (tp.acts||{})[id] ?? 0; }
+  if(it==='test' || it==='pre' || it==='post'){
+    const ps = (RT_LIST[tid]||{})[it] || []; if(!ps.length) return null;
+    const R = rdOf(s); return Math.round(ps.filter(p=> R[`${tid}|${it}|${p.id}`]).length / ps.length * 100);
+  }
+  return null;
+}
+function asgDetail(s, a){
+  const ids = a.topicIds || [];
+  return asgItems(a).map(it=>{ const vs = ids.map(id=> asgItemVal(s, it, id)).filter(v=> v!=null); return {it, name: asgItemName(it), v: vs.length ? Math.round(vs.reduce((x,y)=>x+y,0)/vs.length) : null}; }).filter(x=> x.v!=null);
+}
+const T = {db:null, auth:null, classes:[], cls:null, students:[], assignments:[], tab:'grades', gr:{mode:'overview', skill:'all', unit:'all', sort:'name', lskill:'L', metric:'done'}, sort:{k:'name', d:1}};
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const topicName = id => { const t = CATALOG.find(x=>x.id===id); return t ? t.label : id; };
@@ -191,10 +250,8 @@ function avgSec(s, part, ids){
   return list.length ? Math.round(list.reduce((a,b)=>a+b,0)/list.length) : 0;
 }
 function asgPct(s, a){
-  const parts = (a.parts && a.parts.length) ? a.parts : Object.keys(PARTS);
-  const ids = a.topicIds || [];
-  if(!ids.length) return 0;
-  return Math.round(parts.reduce((x,p)=> x + avgSec(s, p, ids), 0) / parts.length);
+  const d = asgDetail(s, a); if(!d.length) return 0;
+  return Math.round(d.reduce((x,y)=>x+y.v,0)/d.length);
 }
 function lastMs(s){ return s.clientUpdatedAt || (s.updatedAt && s.updatedAt.toMillis ? s.updatedAt.toMillis() : 0); }
 function bar(p){ return p==null ? '<span class="muted">—</span>' : `<div style="display:flex;gap:6px;align-items:center"><div class="bar"><i style="width:${p}%"></i></div><small>${p}%</small></div>`; }
@@ -202,7 +259,7 @@ function bar(p){ return p==null ? '<span class="muted">—</span>' : `<div style
 function render(){
   const P = $('panel');
   if(!T.cls && T.tab!=='classes'){ P.innerHTML = `<div class="card"><h3>Chưa có lớp nào</h3><p class="muted">Bấm <b>＋ Tạo lớp mới</b> để tạo lớp đầu tiên, rồi gửi <b>mã lớp</b> cho học sinh.</p></div>`; return; }
-  ({students:renderStudents, assign:renderAssign, stats:renderStats, reading:renderReading, classes:renderClasses})[T.tab]();
+  ({students:renderStudents, grades:renderGrades, assign:renderAssign, stats:renderStats, reading:renderReading, accounts:renderAccounts, classes:renderClasses})[T.tab]();
 }
 
 /* ---------- Học sinh ---------- */
@@ -224,14 +281,14 @@ function renderStudents(){
     <div class="card" style="padding:12px">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
         <b>Mã lớp gửi học sinh: <span style="color:var(--rust);font-size:18px">${esc(T.cls.code)}</span></b>
-        <span class="muted">Học sinh vào web → 🔑 Đăng nhập → nhập mã lớp, họ tên, PIN 4 số.</span>
+        <span class="muted">${T.cls.managed===false ? 'Học sinh vào web → 🔑 Đăng nhập → nhập mã lớp, họ tên, PIN 4 số.' : 'Học sinh đăng nhập bằng tài khoản cô cấp (tab 🔑 Tài khoản học sinh).'}</span>
         <div style="flex:1"></div><button class="btn small" id="xls1">⬇ Xuất Excel</button>
       </div>
       ${S.length ? `<div class="tscroll"><table><thead><tr>
         ${[['name','Học sinh'],['last','Học gần nhất'],['learned','Đã học'],['mastered','Đã thuộc'],['learn','Learn'],['game','Game'],['practice','Practice'],['review','Review'],['streak','Chuỗi ngày']].map(([kk,l])=>`<th data-k="${kk}">${l}${T.sort.k===kk?(T.sort.d>0?' ▲':' ▼'):''}</th>`).join('')}
       </tr></thead><tbody>
       ${S.map(s=>{ const dd = daysAgo(lastMs(s)); return `<tr class="click" data-uid="${s.uid}">
-        <td><b>${esc(s.name)}</b></td>
+        <td><b>${esc(s.name)}</b>${s.username?`<br><span class="muted" style="font-size:12px">${esc(s.username)}</span>`:''}</td>
         <td>${fmtDate(lastMs(s))}<br>${dd===null?'<span class="pill n">chưa học</span>':dd>=7?`<span class="pill r">${dd} ngày trước</span>`:dd>=3?`<span class="pill y">${dd} ngày trước</span>`:'<span class="pill g">gần đây</span>'}</td>
         <td>${sumOf(s).learned||0}</td><td>${sumOf(s).mastered||0}</td>
         <td>${bar(avgSec(s,'learn'))}</td><td>${bar(avgSec(s,'game'))}</td><td>${bar(avgSec(s,'practice'))}</td><td>${bar(avgSec(s,'review'))}</td>
@@ -275,6 +332,7 @@ function studentDetail(s){
 
 /* ---------- Pre/Post-Reading ---------- */
 const RT_PART = {pre:'Pre-Reading', post:'Post-Reading', test:'Vocabulary Test'};
+const RT_LIST = {"PRE-R3":{"pre":[{"id":"p1","title":"Passage 1: William Kamkwamba","n":9},{"id":"p2","title":"Passage 2: Reducing errors in memory","n":8},{"id":"p3","title":"Passage 3: Patrick Malone (Part 2)","n":8},{"id":"p4","title":"Passage 4: Fighting fear using virtual reality","n":11}],"post":[{"id":"p1","title":"Passage 1: William Kamkwamba","n":8},{"id":"p2","title":"Passage 2: Reducing errors in memory","n":8},{"id":"p3","title":"Passage 3: Patrick Malone (Part 2)","n":8},{"id":"p4","title":"Passage 4: Fighting fear using virtual reality","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 3","n":38}]},"PRE-R1":{"pre":[{"id":"p1","title":"Guided Practice 1: The value of friendship","n":7},{"id":"p2","title":"Guided Practice 2: Making friends","n":7},{"id":"p3","title":"Exam Focus 1: Online and real friends","n":8},{"id":"p4","title":"Exam Focus 2: Closing the Gender Gap in Family","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 1","n":32}]},"PRE-R2":{"pre":[{"id":"p1","title":"Guided Practice 1: The search for the lost Inca city","n":7},{"id":"p2","title":"Guided Practice 2: The world’s friendliest city","n":7},{"id":"p3","title":"Exam Focus 1: A city survey with a difference","n":8},{"id":"p4","title":"Exam Focus 2: The best cities in the world","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 2","n":33}]},"PRE-R4":{"pre":[{"id":"p1","title":"Guided Practice 1: Financier of the United States","n":7},{"id":"p2","title":"Guided Practice 2: Wine tourism","n":7},{"id":"p3","title":"Exam Focus 1: The Future Of Malls","n":8},{"id":"p4","title":"Exam Focus 2: Is this the end of the High Street?","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 4","n":40}]},"PRE-R5":{"pre":[{"id":"p1","title":"Guided Practice 1: Demand for Water in the United States","n":7},{"id":"p2","title":"Guided Practice 2: The changing environment of Australia","n":7},{"id":"p3","title":"Exam Focus 1: What Is Happening to Our Planet?","n":8},{"id":"p4","title":"Exam Focus 2: More Cavities Needed","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 5","n":40}]},"PRE-R6":{"pre":[{"id":"p1","title":"Guided Practice 1: The Wright brothers","n":7},{"id":"p2","title":"Guided Practice 2: The electric revolution","n":8},{"id":"p3","title":"Exam Focus 1: Brackley College Supermileage team","n":7},{"id":"p4","title":"Exam Focus 2: The Boeing 787","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 6","n":40}]},"PRE-R7":{"pre":[{"id":"p1","title":"Guided Practice 1: Hot Days, Hot Nights","n":7},{"id":"p2","title":"Guided Practice 2: Amphibians in the World","n":7},{"id":"p3","title":"Exam Focus 1: Global Warming","n":8},{"id":"p4","title":"Exam Focus 2: The Modern Zoo","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 7","n":40}]},"PRE-R8":{"pre":[{"id":"p1","title":"Guided Practice 1: Education And The Workplace In The Uk","n":7},{"id":"p2","title":"Guided Practice 2: A Workaholic Economy","n":7},{"id":"p3","title":"Exam Focus 1: Globalisation of Education and the Workplace","n":8},{"id":"p4","title":"Exam Focus 2: Job-Sharing: Half a Job Is Better than None","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 8","n":39}]},"PRE-R9":{"pre":[{"id":"p1","title":"Guided Practice 1: Gifted students: acceleration or enrichment?","n":7},{"id":"p2","title":"Guided Practice 2: Where’s the classroom gone?","n":7},{"id":"p3","title":"Exam Focus 1: Speed reading","n":8},{"id":"p4","title":"Exam Focus 2: Public Libraries","n":8}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 9","n":40}]},"PRE-R10":{"pre":[{"id":"p1","title":"Guided Practice 1: Food Culture Shock","n":10},{"id":"p2","title":"Exam Focus 1: Elements, compounds and flavourings","n":10},{"id":"p3","title":"Exam Focus 2: Food Agency Takes on Industry over Junk Labels","n":10}],"test":[{"id":"vt","title":"Vocabulary Test – Unit 10","n":40}]},"PRE-L1":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 1","n":27}]},"PRE-L2":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 2","n":19}]},"PRE-L3":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 3","n":27}]},"PRE-L4":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 4","n":31}]},"PRE-L5":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 5","n":40}]},"PRE-L6":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 6","n":40}]},"PRE-L7":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 7","n":30}]},"PRE-L8":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 8","n":33}]},"PRE-L9":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 9","n":40}]},"PRE-L10":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 10","n":40}]},"PRE-W1":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 1","n":40}]},"PRE-W2":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 2","n":40}]},"PRE-W3":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 3","n":40}]},"PRE-W4":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 4","n":40}]},"PRE-W5":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 5","n":40}]},"PRE-W6":{"test":[{"id":"vt","title":"Vocabulary Test – Unit 6","n":40}]}};
 function rdOf(s){ return (sumOf(s).reading) || {}; }
 function rdDur(sec){ sec = sec||0; return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
 function rdFlags(r){
@@ -291,10 +349,37 @@ function rdKeys(){
   T.students.forEach(s=> Object.entries(rdOf(s)).forEach(([k,r])=>{ if(!m[k]) m[k] = r; }));
   return Object.keys(m).sort().map(k=>({k, r:m[k]}));
 }
+function rdOpenPanel(){
+  const open = (T.cls && T.cls.open) || {};
+  const units = Object.keys(RT_LIST).filter(tid=> /^PRE-R\d+$/.test(tid)).sort((a,b)=> +a.slice(5) - +b.slice(5));
+  return `<div class="card"><h3 style="margin:0 0 4px">🔒 Mở / đóng bài Pre-Reading · Post-Reading cho lớp ${esc(T.cls.code)}</h3>
+    <p class="muted" style="margin:0 0 10px">Học sinh chỉ làm được bài cô <b>mở</b>. Bấm vào ô để mở hoặc đóng; thay đổi có hiệu lực ngay khi học sinh tải lại danh sách bài.</p>
+    ${units.map(tid=>{ const u = RT_LIST[tid];
+      const rows = ['pre','post'].flatMap(part=> (u[part]||[]).map(p=>({part, ...p})));
+      if(!rows.length) return '';
+      const nOpen = rows.filter(r=> open[`${tid}|${r.part}|${r.id}`]).length;
+      return `<details class="rdo"${nOpen?' open':''}><summary><b>${esc(topicName(tid))}</b> <span class="muted">· đang mở ${nOpen}/${rows.length} bài</span>
+        <button class="btn small" data-allo="${tid}" style="margin-left:8px">Mở tất cả</button> <button class="btn small" data-allc="${tid}">Đóng tất cả</button></summary>
+        <div class="rdo-list">${rows.map(r=>{ const k = `${tid}|${r.part}|${r.id}`, on = !!open[k];
+          return `<label class="rdo-row${on?' on':''}"><input type="checkbox" data-ok="${esc(k)}" ${on?'checked':''}><span class="pill ${on?'g':'n'}">${on?'Đang mở':'Đang khoá'}</span> <span class="muted">${RT_PART[r.part]}</span> · ${esc(r.title)} <span class="muted">(${r.n} câu)</span></label>`; }).join('')}</div></details>`; }).join('')}
+  </div>`;
+}
+async function rdSetOpen(keys, on){
+  const patch = {}; keys.forEach(k=> patch[k] = on);
+  await T.db.collection('classes').doc(T.cls.code).set({open: patch}, {merge:true});
+  T.cls.open = Object.assign({}, T.cls.open||{}, patch);
+  renderReading();
+}
 function renderReading(){
   const keys = rdKeys();
-  if(!keys.length){ $('panel').innerHTML = `<div class="card"><h3>Chưa có kết quả Pre/Post-Reading</h3><p class="muted">Học sinh vào unit Reading → mục <b>05 Pre-Reading</b> hoặc <b>06 Post-Reading</b> để làm bài. Kết quả <b>lần làm đầu tiên</b> của mỗi em sẽ hiện ở đây.</p></div>`; return; }
-  $('panel').innerHTML = keys.map(({k,r})=>{
+  const openHtml = rdOpenPanel();
+  const bindOpen = ()=>{
+    $('panel').querySelectorAll('[data-ok]').forEach(cb=> cb.onchange = ()=> rdSetOpen([cb.dataset.ok], cb.checked));
+    $('panel').querySelectorAll('[data-allo],[data-allc]').forEach(b=> b.onclick = (ev)=>{ ev.preventDefault(); const tid = b.dataset.allo || b.dataset.allc, u = RT_LIST[tid];
+      const ks = ['pre','post'].flatMap(part=> (u[part]||[]).map(p=> `${tid}|${part}|${p.id}`)); rdSetOpen(ks, !!b.dataset.allo); });
+  };
+  if(!keys.length){ $('panel').innerHTML = openHtml + `<div class="card"><h3>Chưa có kết quả Pre/Post-Reading</h3><p class="muted">Học sinh vào unit Reading → mục <b>05 Pre-Reading</b> hoặc <b>06 Post-Reading</b> để làm bài. Kết quả <b>lần làm đầu tiên</b> của mỗi em sẽ hiện ở đây.</p></div>`; bindOpen(); return; }
+  $('panel').innerHTML = openHtml + keys.map(({k,r})=>{
     const done = T.students.filter(s=> rdOf(s)[k]);
     const avg = done.length ? Math.round(done.reduce((a,s)=>{ const x = rdOf(s)[k]; return a + (x.tot ? x.sc/x.tot*100 : 0); },0)/done.length) : null;
     const avgTen = r.test && done.length ? (done.reduce((a,s)=> a + (rdOf(s)[k].ten||0), 0)/done.length).toFixed(1) : null;
@@ -308,6 +393,7 @@ function renderReading(){
         return `<tr><td><b>${esc(s.name)}</b></td><td>${x.test ? `<b>${x.ten}/${x.scale||10}</b> điểm (${x.sc}/${x.tot} câu)` : `${x.sc}/${x.tot}`} ${bar(x.tot?Math.round(x.sc/x.tot*100):0)}</td><td>${rdDur(x.dur)}</td><td>${fmtDate(x.at)}</td><td>${rdFlags(x)}</td><td>${x.tries||1}${x.best!=null&&x.best>x.sc?` · tốt nhất ${x.best}/${x.tot}`:''}</td>
           <td>${(x.open||[]).length?`<button class="btn small" data-rd="${s.uid}|${esc(k)}">Xem ${(x.open||[]).length} câu</button>`:'—'}</td></tr>`; }).join('')}
       </tbody></table></div></div>`; }).join('') + `<p class="muted">Điểm chỉ tính câu trắc nghiệm, True/False và nối từ. Câu tự luận cô bấm "Xem" để đọc và chấm. "Rời trang" là số lần em chuyển tab hoặc mở ứng dụng khác khi đang làm bài.</p>`;
+  bindOpen();
   $('panel').querySelectorAll('[data-rd]').forEach(b=> b.onclick = ()=>{ const [uid, ...rest] = b.dataset.rd.split('|'); rdOpen(T.students.find(s=>s.uid===uid), rest.join('|')); });
 }
 function rdOpen(s, k){
@@ -321,6 +407,324 @@ function rdOpen(s, k){
     ${(x.tf||[]).length ? `<h3>Câu True/False em sửa lại</h3><ul>${x.tf.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>` : ''}`);
 }
 
+
+/* ---------- Tài khoản học sinh (cô cấp) ---------- */
+const STUDENT_EMAIL_DOMAIN = 'hocsinh.ivy-word-quest.app';
+function normUser(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'').slice(0,40); }
+function managedEmail(code, user){ return `${code.toLowerCase()}.${normUser(user)}@${STUDENT_EMAIL_DOMAIN}`; }
+function studentPass(code, pin){ return `IVY#${pin}#${code}`; }
+function newPw(){ return String(Math.floor(100000 + Math.random()*900000)); }
+function creatorApp(){
+  let app = (firebase.apps||[]).find(a=>a && a.name==='creator');
+  if(!app){ app = firebase.initializeApp(FIREBASE_CONFIG, 'creator'); try{ app.auth().setPersistence(firebase.auth.Auth.Persistence.NONE); }catch(e){} }
+  return app;
+}
+function siteUrl(){ return location.href.replace(/teacher\.html.*$/,'').replace(/[?#].*$/,''); }
+async function loadRoster(){
+  const qs = await T.db.collection('classes').doc(T.cls.code).collection('roster').get();
+  T.roster = qs.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'vi'));
+}
+async function createStudentAccount(code, name, used){
+  const base = normUser(name) || 'hocsinh';
+  let u = base, i = 2; while(used.has(u)) u = base + (i++);
+  const pw = newPw(), app = creatorApp(), a = app.auth();
+  let cred;
+  try{ cred = await a.createUserWithEmailAndPassword(managedEmail(code, u), studentPass(code, pw)); }
+  catch(e){ if(e.code==='auth/email-already-in-use'){ used.add(u); return createStudentAccount(code, name, used); } throw e; }
+  const uid = cred.user.uid;
+  await app.firestore().collection('students').doc(uid).set({name, classCode: code, username: u, createdAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  await a.signOut();
+  await T.db.collection('classes').doc(code).collection('roster').doc(u).set({name, username: u, password: pw, uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+  used.add(u);
+  return {name, username: u, password: pw, uid};
+}
+async function renderAccounts(){
+  if(!T.cls) return;
+  $('panel').innerHTML = '<div class="card muted">Đang tải danh sách tài khoản…</div>';
+  try{ await loadRoster(); }
+  catch(e){ $('panel').innerHTML = `<div class="card"><h3>Chưa mở được danh sách tài khoản</h3><p class="muted">Cô cần cập nhật <b>Firestore Rules</b> (thêm quyền cho mục tài khoản học sinh). Nhắn Claude để lấy đoạn rules mới.</p><p class="muted">${esc(e.code||e.message||'')}</p></div>`; return; }
+  const managed = T.cls.managed !== false;
+  const R = T.roster;
+  $('panel').innerHTML = `
+    <div class="card">
+      <h3 style="margin-top:0">Cấp tài khoản cho lớp ${esc(T.cls.code)}</h3>
+      ${managed ? '' : `<p class="pill y" style="display:inline-block">Lớp này đang cho học sinh tự đăng ký bằng họ tên + PIN.</p> <button class="btn small" id="acMng">Chuyển sang: chỉ dùng tài khoản cô cấp</button>`}
+      <p class="muted">Dán họ tên học sinh, <b>mỗi dòng một em</b>. Web tự tạo <b>tên đăng nhập</b> (họ tên viết liền, không dấu) và <b>mật khẩu 6 số</b>.</p>
+      <textarea id="acNames" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px" placeholder="Nguyễn Minh Anh&#10;Trần Bảo Ngọc&#10;Lê Hoàng Nam"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn primary" id="acCreate">＋ Tạo tài khoản</button><span class="muted" id="acMsg">${esc(T.acMsg||'')}</span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin:0;flex:1">Danh sách tài khoản (${R.length})</h3>
+        ${R.length ? '<button class="btn small" id="acPrint">🖨 In phiếu tài khoản</button><button class="btn small" id="acXls">⬇ Xuất Excel</button>' : ''}
+      </div>
+      ${R.length ? `<div class="tscroll"><table><thead><tr><th>#</th><th>Họ tên</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th></th></tr></thead><tbody>
+        ${R.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.name)}</b></td><td><code style="font-size:15px">${esc(r.username)}</code></td><td><code style="font-size:15px">${esc(r.password)}</code></td>
+          <td style="white-space:nowrap"><button class="btn small" data-pw="${esc(r.id)}">Đổi mật khẩu</button> <button class="btn small danger" data-del="${esc(r.id)}">Xóa</button></td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="muted">Học sinh vào <b>${esc(siteUrl())}</b> → 🔑 Đăng nhập → nhập <b>Mã lớp ${esc(T.cls.code)}</b>, tên đăng nhập và mật khẩu.</p>`
+      : '<p class="muted">Chưa có tài khoản nào. Dán danh sách họ tên ở trên rồi bấm "Tạo tài khoản".</p>'}
+    </div>`;
+  if($('acMng')) $('acMng').onclick = async ()=>{ await T.db.collection('classes').doc(T.cls.code).set({managed:true},{merge:true}); T.cls.managed = true; renderAccounts(); };
+  $('acCreate').onclick = async ()=>{
+    const names = $('acNames').value.split('\n').map(x=>x.trim().replace(/\s+/g,' ')).filter(Boolean);
+    if(!names.length) return $('acMsg').textContent = 'Cô dán họ tên học sinh vào ô trên nhé.';
+    $('acCreate').disabled = true;
+    const used = new Set(T.roster.map(r=>r.username)), made = [], fail = [];
+    for(let i=0;i<names.length;i++){
+      $('acMsg').textContent = `Đang tạo ${i+1}/${names.length}: ${names[i]}…`;
+      try{ made.push(await createStudentAccount(T.cls.code, names[i], used)); }
+      catch(e){ fail.push(`${names[i]} (${authMsg(e)})`); if(e.code==='auth/too-many-requests') break; }
+      await new Promise(r=>setTimeout(r, 250));
+    }
+    if(T.cls.managed === undefined){ await T.db.collection('classes').doc(T.cls.code).set({managed:true},{merge:true}); T.cls.managed = true; }
+    await loadClass(T.cls.code);
+    T.acMsg = `✅ Đã tạo ${made.length} tài khoản.` + (fail.length ? ` Chưa tạo được: ${fail.join('; ')}` : '');
+    renderAccounts();
+  };
+  if(!R.length) return;
+  $('acPrint').onclick = ()=> printAccountCards(R);
+  $('acXls').onclick = ()=> exportAccounts(R);
+  $('panel').querySelectorAll('[data-pw]').forEach(b=> b.onclick = async ()=>{
+    const r = R.find(x=>x.id===b.dataset.pw);
+    if(!confirm(`Cấp mật khẩu mới cho ${r.name}?`)) return;
+    b.disabled = true;
+    try{
+      const app = creatorApp(), a = app.auth(), pw = newPw();
+      await a.signInWithEmailAndPassword(managedEmail(T.cls.code, r.username), studentPass(T.cls.code, r.password));
+      await a.currentUser.updatePassword(studentPass(T.cls.code, pw));
+      await a.signOut();
+      await T.db.collection('classes').doc(T.cls.code).collection('roster').doc(r.id).set({password: pw}, {merge:true});
+      renderAccounts();
+    }catch(e){ alert('Chưa đổi được mật khẩu: ' + authMsg(e)); b.disabled = false; }
+  });
+  $('panel').querySelectorAll('[data-del]').forEach(b=> b.onclick = async ()=>{
+    const r = R.find(x=>x.id===b.dataset.del);
+    if(!confirm(`Xóa tài khoản của ${r.name}? Toàn bộ tiến độ học của em này cũng bị xóa, không lấy lại được.`)) return;
+    b.disabled = true;
+    try{
+      const app = creatorApp(), a = app.auth();
+      const cred = await a.signInWithEmailAndPassword(managedEmail(T.cls.code, r.username), studentPass(T.cls.code, r.password));
+      await app.firestore().collection('students').doc(cred.user.uid).delete();
+      await a.currentUser.delete();
+      await T.db.collection('classes').doc(T.cls.code).collection('roster').doc(r.id).delete();
+      await loadClass(T.cls.code);
+    }catch(e){ alert('Chưa xóa được: ' + authMsg(e)); b.disabled = false; }
+  });
+}
+function printAccountCards(R){
+  const url = siteUrl(), code = T.cls.code, cname = T.cls.name || '';
+  const cards = R.map(r=>`<div class="c"><div class="h">IVY <i>Word Quest</i></div><div class="cl">${esc(cname)}</div>
+    <div class="n">${esc(r.name)}</div>
+    <table><tr><td>Trang web</td><td><b>${esc(url)}</b></td></tr><tr><td>Mã lớp</td><td><b>${esc(code)}</b></td></tr>
+    <tr><td>Tên đăng nhập</td><td><b class="m">${esc(r.username)}</b></td></tr><tr><td>Mật khẩu</td><td><b class="m">${esc(r.password)}</b></td></tr></table>
+    <div class="f">Vào trang web → bấm 🔑 Đăng nhập → nhập 3 thông tin trên. Giữ phiếu này cẩn thận, không đưa người khác.</div></div>`).join('');
+  const html = `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Phiếu tài khoản lớp ${esc(code)}</title><style>
+    body{font-family:Arial,sans-serif;margin:0;padding:10mm;color:#1d2733}
+    .g{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+    .c{border:1.5px dashed #8a97a8;border-radius:8px;padding:5mm;break-inside:avoid;page-break-inside:avoid}
+    .h{font-weight:800;font-size:15px;color:#1F3A5F}.h i{color:#C0562B}.cl{font-size:11px;color:#6b7684;margin-bottom:3mm}
+    .n{font-size:17px;font-weight:700;margin-bottom:2mm}
+    table{border-collapse:collapse;width:100%;font-size:12.5px}td{padding:1.2mm 0;vertical-align:top}td:first-child{color:#6b7684;width:30mm}
+    .m{font-family:'Courier New',monospace;font-size:16px;letter-spacing:.5px}.f{font-size:10.5px;color:#6b7684;margin-top:2mm}
+    @page{size:A4;margin:8mm}</style></head><body><div class="g">${cards}</div><script>setTimeout(()=>print(),300)<\/script></body></html>`;
+  const w = window.open('', '_blank'); if(!w){ alert('Trình duyệt đang chặn cửa sổ mới. Cô cho phép pop-up rồi bấm lại nhé.'); return; }
+  w.document.write(html); w.document.close();
+}
+async function exportAccounts(R){
+  const rows = [['STT','Họ tên','Mã lớp','Tên đăng nhập','Mật khẩu','Trang web']];
+  R.forEach((r,i)=> rows.push([i+1, r.name, T.cls.code, r.username, r.password, siteUrl()]));
+  try{
+    if(!window.XLSX) await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js');
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Tài khoản');
+    XLSX.writeFile(wb, `TaiKhoan_${T.cls.code}.xlsx`);
+  }catch(e){
+    const csv = '﻿' + rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `TaiKhoan_${T.cls.code}.csv`; a.click();
+  }
+}
+
+
+/* ---------- Bảng điểm (sổ điểm) ---------- */
+const GR_SKILL = {L:'Listening', R:'Reading', P:'Listening Part 1', S:'Speaking', W:'Writing Task 1', I:'IELTS'};
+const GR_LEARN_METRIC = {done:'Hoàn thành (TB 4 phần)', learn:'Learn %', game:'Game %', practice:'Practice %', review:'Review (đã thuộc) %', pr:'Practice – tỉ lệ đúng', gm:'Game – tỉ lệ đúng', dc:'Chính tả (Listening) – điểm', st:'Đặt câu (Writing) – điểm', us:'Dùng từ – tỉ lệ đúng'};
+function grTen(x){ if(!x || !x.tot) return null; return x.test && x.ten!=null ? +x.ten : Math.round(x.sc/x.tot*40)/4; }
+function grCls(v, pct){ if(v==null) return 'e'; if(pct) v = v/10; return v>=8 ? 'g' : v>=6.5 ? 'b' : v>=5 ? 'y' : 'r'; }
+function grFmt(v, pct){ if(v==null) return '–'; return pct ? Math.round(v) + '%' : (Math.round(v*100)/100).toString().replace('.', ','); }
+function grSkillOf(id){ const m = /^PRE-([LRPSW])\d+$/.exec(id); return m ? m[1] : 'I'; }
+function grUnitsOf(sk){ return CATALOG.filter(c=> grSkillOf(c.id)===sk).sort((a,b)=> (+(a.id.match(/\d+$/)||[0])[0]) - (+(b.id.match(/\d+$/)||[0])[0])); }
+function grTopic(s, id){ return (sumOf(s).topics||[]).find(t=> t.id===id); }
+function grLearnVal(tp, m){
+  if(!tp) return null;
+  if(m==='done'){ const sc = tp.sec||{}; return Math.round(((sc.learn||0)+(sc.game||0)+(sc.practice||0)+(sc.review||0))/4); }
+  if(['learn','game','practice','review'].includes(m)) return (tp.sec||{})[m] ?? null;
+  return (tp.acc||{})[m] ?? null;
+}
+function grAvg(a){ const v = a.filter(x=> x!=null); return v.length ? v.reduce((p,q)=>p+q,0)/v.length : null; }
+function grTestCols(part, skill, unit){
+  const cols = [];
+  Object.keys(RT_LIST).filter(tid=> /^PRE-[LRW]\d+$/.test(tid)).sort((a,b)=> a[4]===b[4] ? +a.slice(5) - +b.slice(5) : 'LRW'.indexOf(a[4]) - 'LRW'.indexOf(b[4])).forEach(tid=>{
+    const sk = tid[4], un = tid.slice(5);
+    if(skill!=='all' && skill!==sk) return;
+    if(unit!=='all' && unit!==tid) return;
+    (RT_LIST[tid][part]||[]).forEach((p,i)=> cols.push({key:`${tid}|${part}|${p.id}`, tid, short: part==='test' ? `${sk}${un}` : `${sk}${un}·${i+1}`, title: part==='test' ? `${GR_SKILL[sk]} Unit ${un} – Vocabulary Test` : `${topicName(tid)} – ${p.title}`, n:p.n}));
+  });
+  return cols;
+}
+function renderGrades(){
+  if(!T.cls) return;
+  const g = T.gr; g.mode = g.mode || 'overview'; g.lskill = g.lskill || 'L'; g.metric = g.metric || 'done';
+  const chip = (k,v,l)=> `<button class="gchip${g[k]===v?' on':''}" data-gk="${k}" data-gv="${v}">${l}</button>`;
+  let cols = [], rows = [], pct = false, filters = '', note = '';
+  const studs = T.students.slice();
+  if(g.mode==='overview'){
+    pct = true;
+    cols = [
+      {short:'Từ đã học', title:'Số từ đã học (Learn/Game)', fmt:'n', get:s=> sumOf(s).learned ?? null},
+      {short:'Đã thuộc', title:'Số từ đã thuộc', fmt:'n', get:s=> sumOf(s).mastered ?? null},
+      {short:'Learn', title:'Learn – % trung bình các unit đã học', get:s=> grAvg((sumOf(s).topics||[]).map(t=>(t.sec||{}).learn))},
+      {short:'Game', title:'Game – % trung bình các unit đã học', get:s=> grAvg((sumOf(s).topics||[]).map(t=>(t.sec||{}).game))},
+      {short:'Practice', title:'Practice – % hoàn thành trung bình', get:s=> grAvg((sumOf(s).topics||[]).map(t=>(t.sec||{}).practice))},
+      {short:'Review', title:'Review – % từ đã thuộc trung bình', get:s=> grAvg((sumOf(s).topics||[]).map(t=>(t.sec||{}).review))},
+      {short:'Practice đúng', title:'Tỉ lệ làm đúng ở Practice', get:s=> grAvg((sumOf(s).topics||[]).map(t=>(t.acc||{}).pr))},
+      {short:'Game đúng', title:'Tỉ lệ đúng khi chơi game', get:s=> sumOf(s).gameAcc ?? grAvg((sumOf(s).topics||[]).map(t=>(t.acc||{}).gm))},
+      {short:'Vocab Test', title:'Vocabulary Test – điểm TB /10', ten:true, get:s=> grAvg(Object.values(rdOf(s)).filter(x=>x.part==='test').map(grTen))},
+      {short:'Pre-Reading', title:'Pre-Reading – điểm TB /10', ten:true, get:s=> grAvg(Object.values(rdOf(s)).filter(x=>x.part==='pre').map(grTen))},
+      {short:'Post-Reading', title:'Post-Reading – điểm TB /10', ten:true, get:s=> grAvg(Object.values(rdOf(s)).filter(x=>x.part==='post').map(grTen))},
+      {short:'Chuỗi ngày', title:'Số ngày học liên tiếp', fmt:'n', get:s=> sumOf(s).streak ?? null},
+      {short:'Học gần nhất', title:'Lần học gần nhất', fmt:'date', get:s=> lastMs(s) || null},
+    ];
+    rows = studs.map(s=>({s, cells: cols.map(c=>({v: c.get(s), c}))}));
+    note = 'Phần trăm Learn/Game/Practice/Review là trung bình các unit em đã bắt đầu học. Điểm bài test và Reading là lần làm đầu tiên, thang 10.';
+  } else if(g.mode==='asg'){
+    pct = true;
+    cols = T.assignments.slice().sort((a,b)=> String(a.due||'').localeCompare(String(b.due||''))).map((a,i)=>({short: (a.title || `Bài ${i+1}`).slice(0,18), title: `${a.title || (a.topicIds||[]).map(topicName).join(', ')} — hạn ${(a.due||'').split('-').reverse().join('/')} — ${asgItems(a).map(asgItemName).join(', ')}`, a}));
+    rows = studs.map(s=>({s, cells: cols.map(c=>({v: asgPct(s, c.a), c, asg:c.a}))}));
+    note = 'Mỗi cột là một bài đã giao: % hoàn thành tính <b>chỉ trên các phần cô chọn</b> khi giao bài. <b>≥ 80% là hoàn thành</b> (ô xanh lá). Bấm vào ô để xem em đó còn thiếu phần nào.';
+  } else if(g.mode==='learn'){
+    pct = true;
+    const units = grUnitsOf(g.lskill);
+    filters = `<div>${Object.keys(GR_SKILL).filter(k=> grUnitsOf(k).length).map(k=> chip('lskill', k, GR_SKILL[k])).join('')}</div>
+      <div><select id="grMetric">${Object.entries(GR_LEARN_METRIC).map(([k,l])=>`<option value="${k}" ${g.metric===k?'selected':''}>${l}</option>`).join('')}</select></div>`;
+    cols = units.map(u=>({short: (u.id.match(/\d+$/)||[''])[0] ? `${g.lskill==='I'?'':g.lskill}${(u.id.match(/\d+$/)||[''])[0]}` : u.id, title: u.label, id:u.id}));
+    if(g.lskill==='I') cols.forEach((c,i)=> c.short = String(i+1));
+    rows = studs.map(s=>({s, cells: cols.map(c=>({v: grLearnVal(grTopic(s, c.id), g.metric), tp: grTopic(s, c.id), c}))}));
+    note = `Đang xem: <b>${GR_LEARN_METRIC[g.metric]}</b> theo từng unit. Ô “–” là em chưa học unit đó (hoặc chưa làm phần này).`;
+  } else {
+    filters = `<div>${g.mode==='test' ? chip('skill','all','Tất cả')+chip('skill','L','🎧 Listening')+chip('skill','R','📖 Reading')+chip('skill','W','📊 Writing') : ''}</div>`;
+    cols = grTestCols(g.mode, g.mode==='test' ? g.skill : 'R', g.unit);
+    rows = studs.map(s=>{ const R = rdOf(s); return {s, cells: cols.map(c=>{ const x = R[c.key]; return {x, v: grTen(x), c}; })}; });
+    const unitOpts = [...new Set(cols.map(c=>c.tid))];
+    if(g.unit==='all' || unitOpts.length>1 || g.unit!=='all') filters += `<div><select id="grUnit"><option value="all">Tất cả unit</option>${[...new Set(grTestCols(g.mode, g.mode==='test' ? g.skill : 'R', 'all').map(c=>c.tid))].map(tid=>`<option value="${tid}" ${g.unit===tid?'selected':''}>${esc(topicName(tid))}</option>`).join('')}</select></div>`;
+    note = 'Điểm là <b>lần làm đầu tiên</b>, quy về thang 10. 🚫 = rời trang hoặc bỏ dở khi làm bài. Bấm vào ô điểm để xem chi tiết.';
+  }
+  // trung bình mỗi học sinh (chỉ cột điểm/%; bỏ cột số lượng, ngày)
+  const scoreCols = cols.map(c=> !c.fmt);
+  rows.forEach(r=>{
+    const vs = r.cells.filter((c,i)=> scoreCols[i] && c.v!=null).map(c=> (g.mode==='overview' && c.c.ten) ? c.v*10 : c.v);
+    r.avg = vs.length ? vs.reduce((a,b)=>a+b,0)/vs.length : null; r.done = r.cells.filter((c,i)=> scoreCols[i] && c.v!=null).length;
+    r.viol = r.cells.reduce((a,c)=> a + (c.x ? (c.x.viol||0) + (c.x.end && c.x.end!=='done' ? 1 : 0) : 0), 0);
+  });
+  const sorters = {name:(a,b)=> (a.s.name||'').localeCompare(b.s.name||'','vi'), avg:(a,b)=> (b.avg??-1)-(a.avg??-1), done:(a,b)=> b.done-a.done};
+  rows.sort(sorters[g.sort]||sorters.name);
+  const colAvg = cols.map((c,i)=>{ const vs = rows.map(r=>r.cells[i].v).filter(v=>v!=null); return {n: vs.length, avg: (vs.length && c.fmt!=='date') ? vs.reduce((a,b)=>a+b,0)/vs.length : null}; });
+  const avgPct = g.mode==='overview' || g.mode==='learn' || g.mode==='asg';
+  const any = rows.filter(r=> r.avg!=null), classAvg = any.length ? any.reduce((a,r)=>a+r.avg,0)/any.length : null;
+  const low = avgPct ? 50 : 5;
+  const weak = rows.filter(r=> r.avg!=null && r.avg<low), flagged = rows.filter(r=> r.viol>0), idle = T.students.filter(s=>{ const d = daysAgo(lastMs(s)); return d===null || d>=7; });
+  const cellHtml = (c, i, r)=>{
+    const col = cols[i];
+    if(col.fmt==='n') return `<td class="gc"><span class="gnum">${c.v ?? '–'}</span></td>`;
+    if(col.fmt==='date'){ const d = daysAgo(c.v); return `<td class="gc gdate">${c.v ? `${fmtDate(c.v)}${d>=7?` <span class="pill r">${d} ngày</span>`:''}` : '<span class="pill n">chưa học</span>'}</td>`; }
+    const isTen = g.mode==='test' || g.mode==='pre' || g.mode==='post' || col.ten;
+    if(c.v==null) return '<td class="gc"><span class="gv e">–</span></td>';
+    const flag = c.x && (c.x.viol || (c.x.end && c.x.end!=='done')) ? '<sup>🚫</sup>' : '';
+    if(c.asg) return `<td class="gc"><button class="gv ${grCls(c.v, true)}" data-asg="${r.s.uid}|${c.asg.id}" title="${esc(col.title)}">${c.v}%${c.v>=80?' ✓':''}</button></td>`;
+    const attrs = c.x ? `data-cell="${r.s.uid}|${esc(col.key)}"` : c.tp ? `data-unit="${r.s.uid}|${esc(col.id)}"` : `data-st="${r.s.uid}"`;
+    return `<td class="gc"><button class="gv ${grCls(c.v, !isTen)}" ${attrs} title="${esc(col.title)}">${grFmt(c.v, !isTen)}${flag}</button></td>`;
+  };
+  $('panel').innerHTML = `
+    <div class="card gfilters">
+      <div class="grow">${chip('mode','overview','📋 Tổng quan')}${chip('mode','asg','📌 Bài đã giao')}${chip('mode','learn','📚 Học từ theo unit')}${chip('mode','test','🧪 Vocabulary Test')}${chip('mode','pre','📖 Pre-Reading')}${chip('mode','post','📝 Post-Reading')}</div>
+    </div>
+    ${filters ? `<div class="card gfilters">${filters}</div>` : ''}
+    <div class="kpis">
+      <div><b class="${grCls(classAvg, avgPct)}t">${grFmt(classAvg, avgPct)}</b><span>${avgPct ? 'trung bình lớp' : 'điểm trung bình lớp (/10)'}</span></div>
+      <div><b>${any.length}/${rows.length}</b><span>học sinh đã có kết quả</span></div>
+      <div><b class="rt">${weak.length}</b><span>em dưới ${avgPct ? '50%' : '5 điểm'}</span></div>
+      <div><b class="yt">${g.mode==='overview' || g.mode==='learn' ? idle.length : flagged.length}</b><span>${g.mode==='overview' || g.mode==='learn' ? 'em không học ≥ 7 ngày' : 'em có dấu hiệu gian lận'}</span></div>
+    </div>
+    ${(weak.length || flagged.length || idle.length) ? `<div class="card gwatch"><b>👀 Cần chú ý</b>
+      ${weak.length ? `<span>• Kết quả thấp: ${weak.map(r=>`<a data-st="${r.s.uid}">${esc(r.s.name)} (${grFmt(r.avg, avgPct)})</a>`).join(', ')}</span>` : ''}
+      ${flagged.length ? `<span>• Rời trang / bỏ dở khi làm bài: ${flagged.map(r=>`<a data-st="${r.s.uid}">${esc(r.s.name)}</a>`).join(', ')}</span>` : ''}
+      ${idle.length && (g.mode==='overview' || g.mode==='learn') ? `<span>• Không học ≥ 7 ngày: ${idle.map(s=>`<a data-st="${s.uid}">${esc(s.name)}</a>`).join(', ')}</span>` : ''}</div>` : ''}
+    <div class="card" style="padding:12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <span class="muted">Sắp xếp:</span>${chip('sort','name','Tên A→Z')}${chip('sort','avg', avgPct ? 'Cao → thấp' : 'Điểm cao → thấp')}${chip('sort','done','Làm nhiều nhất')}
+        <div style="flex:1"></div>
+        <span class="glegend"><i class="g"></i>${avgPct?'≥80%':'≥8'} <i class="b"></i>${avgPct?'65–80%':'6,5–8'} <i class="y"></i>${avgPct?'50–65%':'5–6,5'} <i class="r"></i>${avgPct?'<50%':'<5'}</span>
+        <button class="btn small" id="grXls">⬇ Xuất Excel</button>
+      </div>
+      ${!rows.length ? '<p class="muted">Lớp chưa có học sinh.</p>' : !cols.length ? '<p class="muted">Không có bài nào cho lựa chọn này.</p>' : `
+      <div class="gwrap"><table class="gtable"><thead><tr><th class="gname">Học sinh</th><th class="gavg" title="Trung bình các cột điểm">TB</th>
+        ${cols.map(c=>`<th title="${esc(c.title)}${c.n?` (${c.n} câu)`:''}">${esc(c.short)}</th>`).join('')}</tr></thead><tbody>
+        ${rows.map(r=>`<tr><td class="gname"><a data-st="${r.s.uid}">${esc(r.s.name)}</a></td>
+          <td class="gavg"><span class="gv ${grCls(r.avg, avgPct)}">${grFmt(r.avg, avgPct)}</span></td>
+          ${r.cells.map((c,i)=> cellHtml(c, i, r)).join('')}</tr>`).join('')}
+        <tr class="gfoot"><td class="gname">Trung bình lớp</td><td class="gavg"><span class="gv ${grCls(classAvg, avgPct)}">${grFmt(classAvg, avgPct)}</span></td>
+          ${colAvg.map((c,i)=> cols[i].fmt==='date' ? '<td class="gc"></td>' : cols[i].fmt==='n' ? `<td class="gc"><span class="gnum">${c.avg==null?'–':Math.round(c.avg)}</span></td>` : `<td class="gc"><span class="gv ${grCls(c.avg, !(g.mode==='test'||g.mode==='pre'||g.mode==='post'||cols[i].ten))}">${grFmt(c.avg, !(g.mode==='test'||g.mode==='pre'||g.mode==='post'||cols[i].ten))}</span><small>${c.n} em</small></td>`).join('')}</tr>
+      </tbody></table></div>
+      <p class="muted" style="margin:8px 0 0">${note} Rê chuột lên tên cột để xem đầy đủ.</p>`}
+    </div>`;
+  $('panel').querySelectorAll('[data-gk]').forEach(b=> b.onclick = ()=>{ const k = b.dataset.gk; g[k] = b.dataset.gv; if(k==='mode' || k==='skill'){ g.unit = 'all'; } if(k==='mode') g.skill = 'all'; renderGrades(); });
+  if($('grUnit')) $('grUnit').onchange = ()=>{ g.unit = $('grUnit').value; renderGrades(); };
+  if($('grMetric')) $('grMetric').onchange = ()=>{ g.metric = $('grMetric').value; renderGrades(); };
+  $('panel').querySelectorAll('[data-st]').forEach(a=> a.onclick = ()=> studentDetail(T.students.find(s=>s.uid===a.dataset.st)));
+  $('panel').querySelectorAll('[data-cell]').forEach(b=> b.onclick = ()=>{ const [uid, ...k] = b.dataset.cell.split('|'); grCell(T.students.find(s=>s.uid===uid), k.join('|')); });
+  $('panel').querySelectorAll('[data-asg]').forEach(b=> b.onclick = ()=>{ const [uid, aid] = b.dataset.asg.split('|'); const s = T.students.find(x=>x.uid===uid), a = T.assignments.find(x=>x.id===aid);
+    const d = asgDetail(s, a), p = asgPct(s, a);
+    modal(`<div style="display:flex;align-items:center"><h2 style="flex:1">${esc(s.name)}</h2><button class="btn small" onclick="closeModal()">Đóng</button></div>
+      <p style="margin:0 0 6px"><b>${esc(a.title || 'Bài đã giao')}</b> · ${(a.topicIds||[]).map(topicName).map(esc).join(' · ')} · hạn ${esc((a.due||'').split('-').reverse().join('/'))}</p>
+      <p>Tổng: <span class="gv ${grCls(p, true)}">${p}%</span> ${p>=80 ? '<span class="pill g">Hoàn thành</span>' : '<span class="pill y">Chưa đạt 80%</span>'}</p>
+      <table class="gmini"><tbody>${d.map(x=>`<tr><td>${esc(x.name)}</td><td><span class="gv ${grCls(x.v, true)}">${x.v}%</span></td><td>${x.v>=80?'✅':x.v>0?'◐ đang làm':'○ chưa làm'}</td></tr>`).join('')}</tbody></table>`); });
+  $('panel').querySelectorAll('[data-unit]').forEach(b=> b.onclick = ()=>{ const [uid, id] = b.dataset.unit.split('|'); grUnitCell(T.students.find(s=>s.uid===uid), id); });
+  if($('grXls')) $('grXls').onclick = ()=> grExport(cols, rows, colAvg, classAvg, avgPct);
+}
+function grUnitCell(s, id){
+  const tp = grTopic(s, id); if(!tp) return;
+  const sc = tp.sec||{}, ac = tp.acc||{};
+  const row = (l, v, isPct=true)=> `<tr><td>${l}</td><td><span class="gv ${grCls(v, true)}">${grFmt(v, true)}</span></td></tr>`;
+  modal(`<div style="display:flex;align-items:center"><h2 style="flex:1">${esc(s.name)}</h2><button class="btn small" onclick="closeModal()">Đóng</button></div>
+    <p style="margin:0 0 10px"><b>${esc(topicName(id))}</b> · đã học ${tp.learned}/${tp.total} từ · đã thuộc ${tp.mastered}</p>
+    <table class="gmini"><tbody>${row('Learn', sc.learn)}${row('Game', sc.game)}${row('Practice (hoàn thành)', sc.practice)}${row('Review (đã thuộc)', sc.review)}
+      ${row('Practice – tỉ lệ đúng', ac.pr)}${row('Game – tỉ lệ đúng', ac.gm)}${ac.dc!=null?row('Chính tả', ac.dc):''}${ac.st!=null?row('Đặt câu', ac.st):''}${ac.us!=null?row('Dùng từ', ac.us):''}</tbody></table>`);
+}
+function grCell(s, k){
+  const x = rdOf(s)[k]; if(!x) return;
+  const v = grTen(x);
+  modal(`<div style="display:flex;align-items:center"><h2 style="flex:1">${esc(s.name)}</h2><button class="btn small" onclick="closeModal()">Đóng</button></div>
+    <p style="margin:0 0 10px"><b>${esc(topicName(x.tid))}</b> · ${RT_PART[x.part]||x.part}${x.part!=='test' ? ` · ${esc(x.title)}` : ''}</p>
+    <div class="kpis"><div><b class="${grCls(v)}t">${grFmt(v)}</b><span>điểm /10</span></div><div><b>${x.sc}/${x.tot}</b><span>câu đúng</span></div>
+      <div><b>${rdDur(x.dur)}</b><span>thời gian làm</span></div><div><b>${x.tries||1}</b><span>số lần làm${x.best!=null && x.best>x.sc ? ` · tốt nhất ${x.best}/${x.tot}` : ''}</span></div></div>
+    <p>Làm lúc ${fmtDate(x.at)} · ${rdFlags(x)}</p>
+    ${(x.open||[]).length ? `<p class="muted">Bài có ${(x.open||[]).length} câu tự luận (bản cũ).</p>` : ''}`);
+}
+async function grExport(cols, rows, colAvg, classAvg, avgPct){
+  const val = (v, c)=> v==null ? '' : c && c.fmt==='date' ? fmtDate(v) : Math.round(v*100)/100;
+  const head = ['Học sinh', avgPct ? 'TB (%)' : 'TB (/10)', ...cols.map(c=> c.title)];
+  const data = [head, ...rows.map(r=> [r.s.name, val(r.avg), ...r.cells.map((c,i)=> val(c.v, cols[i]))]),
+    ['Trung bình lớp', val(classAvg), ...colAvg.map((c,i)=> cols[i].fmt==='date' ? '' : val(c.avg))]];
+  const name = `BangDiem_${T.cls.code}_${({asg:'BaiDaGiao', overview:'TongQuan', learn:'HocTu_'+T.gr.lskill+'_'+T.gr.metric, test:'VocabTest', pre:'PreReading', post:'PostReading'})[T.gr.mode]}`;
+  try{
+    if(!window.XLSX) await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js');
+    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:24},{wch:9}, ...cols.map(()=>({wch:14}))];
+    XLSX.utils.book_append_sheet(wb, ws, 'Bảng điểm'); XLSX.writeFile(wb, name + '.xlsx');
+  }catch(e){
+    const csv = '﻿' + data.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = name + '.csv'; a.click();
+  }
+}
 /* ---------- Giao bài ---------- */
 function topicPicker(){
   const groups = {};
@@ -335,8 +739,15 @@ function renderAssign(){
         <h3>Giao bài mới cho lớp ${esc(T.cls.code)}</h3>
         <label class="f"><span>Tên bài (không bắt buộc)</span><input id="aTitle" placeholder="VD: Từ vựng tuần 3"></label>
         <label class="f"><span>Chọn unit</span></label>${topicPicker()}
-        <label class="f"><span>Phần cần làm</span></label>
-        <div class="chips">${Object.entries(PARTS).map(([k,l])=>`<label><input type="checkbox" class="aPart" value="${k}" ${k!=='review'?'checked':''}> ${l}</label>`).join('')}</div>
+        <label class="f"><span>Phần cần làm <span class="muted">(chỉ tính % trên các phần cô chọn · đạt 80% là hoàn thành)</span></span></label>
+        <div class="asgparts">
+          <div><b>📖 Học</b><div class="chips"><label><input type="checkbox" class="aItem" value="learn" checked> Learn (thẻ từ)</label><label><input type="checkbox" class="aItem" value="review"> Review (thuộc từ)</label></div></div>
+          <div><b>🎮 Game</b> <span class="muted">– chọn vài game cụ thể; mỗi game em chơi xong ít nhất 1 lượt là đạt</span>
+            <div class="chips">${(ASGCAT.games||[]).map(g=>`<label><input type="checkbox" class="aItem" value="game:${g.id}"> ${g.icon} ${esc(g.title)}</label>`).join('')}<label class="alt"><input type="checkbox" class="aItem" value="gameall"> Mọi game (% từ đã chơi)</label></div></div>
+          <div><b>✍️ Practice</b> <span class="muted">– tính theo % làm đúng của từng bài</span>
+            <div class="chips" id="aActs"></div></div>
+          <div><b>🧪 Kiểm tra & Reading</b><div class="chips"><label><input type="checkbox" class="aItem" value="test"> Vocabulary Test</label><label><input type="checkbox" class="aItem" value="pre"> Pre-Reading (cô nhớ mở bài)</label><label><input type="checkbox" class="aItem" value="post"> Post-Reading</label></div></div>
+        </div>
         <label class="f"><span>Hạn nộp</span><input type="date" id="aDue" value="${tdy}"></label>
         <label class="f"><span>Ghi chú cho học sinh</span><input id="aNote" placeholder="VD: Làm hết phần Game và Practice"></label>
         <div class="err" id="aErr"></div>
@@ -350,20 +761,28 @@ function renderAssign(){
           const late = a.due && a.due < tdy;
           return `<div style="border-top:1px dashed var(--line);padding:10px 0">
             <b>${esc(a.title || (a.topicIds||[]).map(topicName).join(', '))}</b> ${late?'<span class="pill r">đã hết hạn</span>':'<span class="pill g">đang mở</span>'}<br>
-            <span class="muted">${(a.topicIds||[]).map(topicName).map(esc).join(' · ')} — ${(a.parts||[]).map(p=>PARTS[p]).join(', ')} — hạn ${esc((a.due||'').split('-').reverse().join('/'))}</span><br>
+            <span class="muted">${(a.topicIds||[]).map(topicName).map(esc).join(' · ')}<br>Phần cần làm: <b>${asgItems(a).map(asgItemName).map(esc).join(', ')}</b> — hạn ${esc((a.due||'').split('-').reverse().join('/'))}</span><br>
             <b>${done}/${T.students.length}</b> <span class="muted">học sinh hoàn thành</span>
             <div style="margin-top:6px;display:flex;gap:6px"><button class="btn small" data-view="${a.id}">Xem từng em</button><button class="btn small danger" data-del="${a.id}">Xóa</button></div></div>`;
         }).join('') : '<p class="muted">Chưa giao bài nào.</p>'}
       </div>
     </div>`;
+  const drawActs = ()=>{
+    const ids = [...document.querySelectorAll('.topicpick input:checked')].map(i=>i.value);
+    const seen = new Map(); (ids.length ? ids : ['PRE-L1']).forEach(id=> ((ASGCAT.acts||{})[id]||[]).forEach(a=>{ if(!seen.has(a.id)) seen.set(a.id, a.title); }));
+    const keep = new Set([...document.querySelectorAll('#aActs input:checked')].map(i=>i.value));
+    $('aActs').innerHTML = [...seen].map(([id,title])=>`<label><input type="checkbox" class="aItem" value="act:${id}" ${keep.has('act:'+id)?'checked':''}> ${esc(title)}</label>`).join('') + `<label class="alt"><input type="checkbox" class="aItem" value="practiceall" ${keep.has('practiceall')?'checked':''}> Tất cả Practice</label>`;
+  };
+  drawActs();
+  document.querySelectorAll('.topicpick input').forEach(i=> i.addEventListener('change', drawActs));
   $('aAdd').onclick = async ()=>{
     const ids = [...document.querySelectorAll('.topicpick input:checked')].map(i=>i.value);
-    const parts = [...document.querySelectorAll('.aPart:checked')].map(i=>i.value);
+    const items = [...document.querySelectorAll('.aItem:checked')].map(i=>i.value);
     if(!ids.length) return $('aErr').textContent = 'Cô chọn ít nhất 1 unit.';
-    if(!parts.length) return $('aErr').textContent = 'Cô chọn ít nhất 1 phần cần làm.';
+    if(!items.length) return $('aErr').textContent = 'Cô chọn ít nhất 1 phần cần làm.';
     $('aAdd').disabled = true;
     await T.db.collection('classes').doc(T.cls.code).collection('assignments').add({
-      title: $('aTitle').value.trim(), topicIds: ids, parts, due: $('aDue').value, note: $('aNote').value.trim(),
+      title: $('aTitle').value.trim(), topicIds: ids, items, due: $('aDue').value, note: $('aNote').value.trim(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()});
     loadClass(T.cls.code);
   };
@@ -373,12 +792,13 @@ function renderAssign(){
   });
   $('panel').querySelectorAll('[data-view]').forEach(b=> b.onclick = ()=>{
     const a = T.assignments.find(x=>x.id===b.dataset.view);
-    const rows = T.students.map(s=>({s, p: asgPct(s,a)})).sort((x,y)=> x.p-y.p);
+    const its = asgItems(a);
+    const rows = T.students.map(s=>{ const d = asgDetail(s, a); return {s, p: asgPct(s,a), d}; }).sort((x,y)=> x.p-y.p);
     modal(`<div style="display:flex;align-items:center"><h2 style="flex:1">${esc(a.title || 'Bài đã giao')}</h2><button class="btn small" onclick="closeModal()">Đóng</button></div>
       <p class="muted">${(a.topicIds||[]).map(topicName).map(esc).join(' · ')} — hạn ${esc((a.due||'').split('-').reverse().join('/'))}</p>
-      <table><thead><tr><th>Học sinh</th><th>Tiến độ</th><th>Trạng thái</th><th>Học gần nhất</th></tr></thead><tbody>
-      ${rows.map(({s,p})=>`<tr><td>${esc(s.name)}</td><td>${bar(p)}</td><td>${p>=80?'<span class="pill g">Hoàn thành</span>':a.due&&a.due<today()?'<span class="pill r">Chưa xong · trễ hạn</span>':p>0?'<span class="pill y">Đang làm</span>':'<span class="pill n">Chưa làm</span>'}</td><td>${fmtDate(lastMs(s))}</td></tr>`).join('')}
-      </tbody></table>`);
+      <div class="tscroll"><table><thead><tr><th>Học sinh</th><th>Tổng</th>${its.map(it=>`<th>${esc(asgItemName(it))}</th>`).join('')}<th>Trạng thái</th><th>Học gần nhất</th></tr></thead><tbody>
+      ${rows.map(({s,p,d})=>`<tr><td>${esc(s.name)}</td><td>${bar(p)}</td>${its.map(it=>{ const x = d.find(y=>y.it===it); return `<td>${x==null ? '<span class="muted">—</span>' : `<span class="gv ${grCls(x.v, true)}">${x.v}%</span>`}</td>`; }).join('')}<td>${p>=80?'<span class="pill g">Hoàn thành</span>':a.due&&a.due<today()?'<span class="pill r">Chưa xong · trễ hạn</span>':p>0?'<span class="pill y">Đang làm</span>':'<span class="pill n">Chưa làm</span>'}</td><td>${fmtDate(lastMs(s))}</td></tr>`).join('')}
+      </tbody></table></div><p class="muted">Mỗi game: đạt 100% khi em chơi xong ít nhất 1 lượt ở unit được giao. Practice: % làm đúng. Learn/Review: % số từ. Tổng ≥ 80% là hoàn thành.</p>`);
   });
 }
 
@@ -435,13 +855,14 @@ function newClassDialog(edit){
     <label class="f"><span>Mã lớp (học sinh nhập mã này, viết liền không dấu)</span><input id="cCode" maxlength="20" placeholder="VD: TH-K1" ${edit?'disabled':''} value="${esc(edit?edit.code:'')}" style="text-transform:uppercase"></label>
     <label class="f"><span>Tên lớp</span><input id="cName" maxlength="60" placeholder="VD: Pre-IELTS Tiền Hải K1 – Tối 2-4-6" value="${esc(edit?edit.name||'':'')}"></label>
     <label class="f"><span>Ghi chú</span><input id="cNote" maxlength="120" value="${esc(edit?edit.note||'':'')}"></label>
+    <label class="f" style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="cManaged" ${!edit || edit.managed!==false ? 'checked' : ''} style="width:auto;margin-top:4px"><span><b>Cô cấp tài khoản cho học sinh</b> (khuyên dùng). Bỏ chọn nếu muốn học sinh tự đăng ký bằng họ tên + PIN.</span></label>
     <div class="err" id="cErr"></div>
     <div style="display:flex;gap:8px"><button class="btn primary" id="cSave">Lưu</button><button class="btn" onclick="closeModal()">Hủy</button></div>`);
   $('cSave').onclick = async ()=>{
     const code = edit ? edit.code : $('cCode').value.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/Đ/g,'D').replace(/[^A-Z0-9-]/g,'');
     if(code.length < 3) return $('cErr').textContent = 'Mã lớp cần ít nhất 3 ký tự (chữ, số, gạch nối).';
     if(!edit && T.classes.some(c=>c.code===code)) return $('cErr').textContent = 'Mã lớp này đã có.';
-    await T.db.collection('classes').doc(code).set({name: $('cName').value.trim(), note: $('cNote').value.trim(),
+    await T.db.collection('classes').doc(code).set({name: $('cName').value.trim(), note: $('cNote').value.trim(), managed: $('cManaged').checked,
       ...(edit ? {} : {createdAt: firebase.firestore.FieldValue.serverTimestamp()})}, {merge:true});
     closeModal(); loadClasses(code);
   };
