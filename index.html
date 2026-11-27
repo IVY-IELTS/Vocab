@@ -7402,9 +7402,9 @@ function showCloudLogin(why){
   document.getElementById('loginCard').innerHTML = `
     <button class="rv-close" id="loginX" title="Đóng">✕</button>
     <h2>${why ? 'Đăng nhập để tiếp tục' : 'Vào lớp học'} 👋</h2>
-    <p class="rv-lead">${why ? `<b>${escHtml(why)}</b><br>` : ''}Nhập <b>mã lớp</b>, <b>tên đăng nhập</b> và <b>mật khẩu</b> trên phiếu tài khoản cô phát.</p>
+    <p class="rv-lead">${why ? `<b>${escHtml(why)}</b><br>` : ''}Nhập <b>mã lớp</b>, <b>tên đăng nhập</b> và <b>mật khẩu</b> trên phiếu cô phát. Nếu em đã có tài khoản từ trước: nhập <b>họ tên đầy đủ</b> và <b>PIN 4 số</b> như cũ.</p>
     <label class="login-field"><span>Mã lớp</span><input id="clCode" maxlength="20" placeholder="VD: TH-K1" autocomplete="off" value="${escHtml(last.code||'')}" style="text-transform:uppercase"></label>
-    <label class="login-field"><span>Tên đăng nhập</span><input id="clName" maxlength="40" placeholder="VD: nguyenminhanh" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escHtml(last.name||'')}"></label>
+    <label class="login-field"><span>Tên đăng nhập / Họ tên</span><input id="clName" maxlength="40" placeholder="VD: nguyenminhanh" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escHtml(last.name||'')}"></label>
     <label class="login-field"><span>Mật khẩu</span><input id="clPin" maxlength="20" type="password" placeholder="••••••" autocomplete="current-password"></label>
     <div class="login-err" id="loginErr"></div>
     <div class="pg-actions">
@@ -7429,23 +7429,34 @@ function showCloudLogin(why){
       await cloudInit();
       const cls = await CLOUD.db.collection('classes').doc(code).get();
       if(!cls.exists){ err.style.color = ''; err.textContent = `Không tìm thấy lớp có mã "${code}". Em kiểm tra lại mã cô gửi nhé.`; btn.disabled = false; return; }
-      /* lớp do cô cấp tài khoản: chỉ đăng nhập, không tự đăng ký */
-      if((cls.data()||{}).managed !== false){
-        let cred;
-        try{ cred = await CLOUD.auth.signInWithEmailAndPassword(managedEmail(code, name), studentPass(code, pin)); }
-        catch(e){
-          if(e.code==='auth/network-request-failed' || e.code==='auth/too-many-requests') throw e;
-          err.style.color = ''; err.textContent = 'Tên đăng nhập hoặc mật khẩu chưa đúng. Em xem lại phiếu tài khoản cô phát, hoặc nhờ cô cấp lại.'; btn.disabled = false; return;
-        }
-        const uid = cred.user.uid;
-        const sd = await CLOUD.db.collection('students').doc(uid).get();
-        const realName = ((sd.exists && sd.data()) || {}).name || name;
+      const cdata = cls.data()||{};
+      const finish = async (uid, displayName, lastName)=>{
         await cloudPull(uid);
-        CLOUD.className = (cls.data()||{}).name || '';
-        storage.set('cloud_last', {code, name: normUser(name)});
-        loginAs({id:uid, name: realName, cls:code, cloud:true});
+        CLOUD.className = cdata.name || '';
+        storage.set('cloud_last', {code, name: lastName});
+        loginAs({id:uid, name: displayName, cls:code, cloud:true});
         cloudSchedulePush(1500);
+      };
+      const realNameOf = async (uid, fallback)=>{ try{ const sd = await CLOUD.db.collection('students').doc(uid).get(); return ((sd.exists && sd.data()) || {}).name || fallback; }catch(e){ return fallback; } };
+      /* 1) tài khoản cô cấp (tên đăng nhập + mật khẩu 6 số) */
+      try{
+        const cred = await CLOUD.auth.signInWithEmailAndPassword(managedEmail(code, name), studentPass(code, pin));
+        const uid = cred.user.uid;
+        await finish(uid, await realNameOf(uid, name), normUser(name));
         return;
+      }catch(e){ if(e.code==='auth/network-request-failed' || e.code==='auth/too-many-requests') throw e; }
+      /* 2) tài khoản cũ học sinh tự tạo (họ tên + PIN 4 số) – vẫn cho vào dù lớp đã chuyển sang tài khoản cô cấp */
+      if(/^\d{4}$/.test(pin) && name.split(' ').length >= 2){
+        try{
+          const cred = await CLOUD.auth.signInWithEmailAndPassword(studentEmail(code, name), studentPass(code, pin));
+          const uid = cred.user.uid;
+          await finish(uid, await realNameOf(uid, name), name);
+          return;
+        }catch(e){ if(e.code==='auth/network-request-failed' || e.code==='auth/too-many-requests') throw e; }
+      }
+      /* lớp chỉ dùng tài khoản cô cấp: không tự đăng ký */
+      if(cdata.managed === true){
+        err.style.color = ''; err.textContent = 'Tên đăng nhập hoặc mật khẩu chưa đúng. Em dùng tên đăng nhập + mật khẩu 6 số trên phiếu cô phát (hoặc họ tên đầy đủ + PIN 4 số nếu em đã tạo tài khoản từ trước), hoặc nhờ cô cấp lại.'; btn.disabled = false; return;
       }
       if(name.split(' ').length < 2){ err.style.color = ''; err.textContent = 'Lớp này đăng nhập bằng họ tên đầy đủ và mã PIN 4 số.'; btn.disabled = false; return; }
       if(!/^\d{4}$/.test(pin)){ err.style.color = ''; err.textContent = 'Mã PIN gồm đúng 4 chữ số.'; btn.disabled = false; return; }
